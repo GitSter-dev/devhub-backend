@@ -14,6 +14,7 @@ import java.util.UUID;
 public class UserSetupService {
 
     private final UserRepository userRepository;
+    private final UsernameProperties usernameProperties;
     private final UserTopics userTopics;
 
     @Transactional
@@ -23,6 +24,6 @@ public class UserSetupService {
             throw ApiException.of(ErrorCode.TOPICS_REQUIRED);
         }
         user.completeSetup();
-        return CurrentUserResponse.from(user);
+        return CurrentUserResponse.from(user, usernameProperties.changeCooldown());
     }
 }

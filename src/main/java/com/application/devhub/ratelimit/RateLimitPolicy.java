@@ -10,5 +10,6 @@ public enum RateLimitPolicy {
     RESEND_VERIFICATION,
     FORGOT_PASSWORD,
     TEST_NOTIFICATION,
-    FOLLOW
+    FOLLOW,
+    SEARCH
 }

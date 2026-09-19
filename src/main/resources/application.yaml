@@ -70,6 +70,7 @@ devhub:
       forgot-password: { capacity: 5, period: 10m }
       test-notification: { capacity: 3, period: 10m }
       follow: { capacity: 100, period: 10m }
+      search: { capacity: 120, period: 1m }
   session:
     refresh-token-ttl: ${REFRESH_TOKEN_TTL:30d}
     refresh-replay-window: ${REFRESH_REPLAY_WINDOW:60s}
@@ -79,6 +80,9 @@ devhub:
     heartbeat: ${REALTIME_HEARTBEAT:10s}
     time-to-first-message: ${REALTIME_TIME_TO_FIRST_MESSAGE:10s}
     allowed-origins: ${REALTIME_ALLOWED_ORIGINS:*}
+  username:
+    change-cooldown: ${USERNAME_CHANGE_COOLDOWN:30d}
+    hold: ${USERNAME_HOLD:14d}
   push:
     enabled: ${PUSH_ENABLED:false}
     credentials: ${FIREBASE_CREDENTIALS:}

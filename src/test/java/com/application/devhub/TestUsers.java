@@ -26,7 +26,11 @@ public class TestUsers {
     private final JsonMapper jsonMapper;
 
     public UUID verified(String username) {
-        User user = new User(username, username, username + "@dev.io", passwordEncoder.encode(PASSWORD));
+        return verified(username, username);
+    }
+
+    public UUID verified(String username, String displayName) {
+        User user = new User(username, displayName, username + "@dev.io", passwordEncoder.encode(PASSWORD));
         user.markEmailVerified();
         return userRepository.save(user).getId();
     }

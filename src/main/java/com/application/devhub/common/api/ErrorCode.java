@@ -29,7 +29,8 @@ public enum ErrorCode {
     IDEMPOTENCY_KEY_REUSED(HttpStatus.UNPROCESSABLE_CONTENT),
     SESSION_ENDED(HttpStatus.UNAUTHORIZED),
     CANNOT_FOLLOW_SELF(HttpStatus.BAD_REQUEST),
-    TOPICS_REQUIRED(HttpStatus.BAD_REQUEST);
+    TOPICS_REQUIRED(HttpStatus.BAD_REQUEST),
+    USERNAME_CHANGE_TOO_SOON(HttpStatus.CONFLICT);
 
     private final HttpStatus status;
 

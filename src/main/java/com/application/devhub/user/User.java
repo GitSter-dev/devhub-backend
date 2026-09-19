@@ -10,6 +10,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.Duration;
 import java.time.Instant;
 
 @Entity
@@ -40,6 +41,18 @@ public class User extends BaseEntity {
     @Column(name = "setup_completed_at")
     private Instant setupCompletedAt;
 
+    @Column(length = 160)
+    private String bio;
+
+    @Column(name = "github_username", length = 39)
+    private String githubUsername;
+
+    @Column(name = "website_url", length = 200)
+    private String websiteUrl;
+
+    @Column(name = "username_changed_at")
+    private Instant usernameChangedAt;
+
     public User(String username, String displayName, String email, String passwordHash) {
         this.username = username;
         this.displayName = displayName;
@@ -68,5 +81,21 @@ public class User extends BaseEntity {
         if (setupCompletedAt == null) {
             this.setupCompletedAt = Instant.now();
         }
+    }
+
+    public void updateProfile(ProfileDetails details) {
+        this.displayName = details.displayName();
+        this.bio = details.bio();
+        this.githubUsername = details.githubUsername();
+        this.websiteUrl = details.websiteUrl();
+    }
+
+    public Instant usernameChangeAvailableAt(Duration cooldown) {
+        return usernameChangedAt == null ? null : usernameChangedAt.plus(cooldown);
+    }
+
+    public void rename(String username) {
+        this.username = username;
+        this.usernameChangedAt = Instant.now();
     }
 }

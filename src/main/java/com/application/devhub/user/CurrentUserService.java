@@ -12,11 +12,12 @@ import java.util.UUID;
 public class CurrentUserService {
 
     private final UserRepository userRepository;
+    private final UsernameProperties usernameProperties;
 
     @Transactional(readOnly = true)
     public CurrentUserResponse get(UUID userId) {
         return userRepository.findById(userId)
-                .map(CurrentUserResponse::from)
+                .map(user -> CurrentUserResponse.from(user, usernameProperties.changeCooldown()))
                 .orElseThrow(ApiException::notFound);
     }
 }
