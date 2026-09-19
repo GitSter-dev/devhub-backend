@@ -73,6 +73,7 @@ devhub:
       search: { capacity: 120, period: 1m }
       posting: { capacity: 30, period: 10m }
       like: { capacity: 300, period: 10m }
+      messaging: { capacity: 60, period: 1m }
   session:
     refresh-token-ttl: ${REFRESH_TOKEN_TTL:30d}
     refresh-replay-window: ${REFRESH_REPLAY_WINDOW:60s}

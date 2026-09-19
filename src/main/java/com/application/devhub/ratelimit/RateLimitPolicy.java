@@ -13,5 +13,6 @@ public enum RateLimitPolicy {
     FOLLOW,
     SEARCH,
     POSTING,
-    LIKE
+    LIKE,
+    MESSAGING
 }
