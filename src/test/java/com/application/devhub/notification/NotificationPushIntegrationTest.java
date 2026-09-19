@@ -91,7 +91,8 @@ class NotificationPushIntegrationTest extends IntegrationTest {
         assertThat(push.getValue().title()).isEqualTo("Linus and Ken liked your post");
         assertThat(push.getValue().body()).isEqualTo("Shipped the parser");
         assertThat(push.getValue().group()).isEqualTo("activity:POST_LIKED:" + post);
-        assertThat(push.getValue().data()).containsEntry("kind", "activity").containsEntry("type", "POST_LIKED");
+        assertThat(push.getValue().data()).containsEntry("kind", "activity").containsEntry("type", "POST_LIKED")
+                .containsEntry("actorUsername", "linus");
         assertThat(row().get("pushed_count")).isEqualTo(1);
         assertThat(row().get("push_due_at")).isNull();
     }

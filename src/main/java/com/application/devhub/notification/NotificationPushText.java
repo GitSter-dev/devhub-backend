@@ -34,6 +34,7 @@ public class NotificationPushText {
             data.put("targetId", notification.targetId().toString());
         }
         data.put("actorCount", Integer.toString(notification.actorCount()));
+        data.put("actorUsername", notification.actors().getFirst().username());
         return PushMessage.grouped(title, body(notification), data, groupOf(notification));
     }
 
