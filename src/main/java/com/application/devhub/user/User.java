@@ -111,6 +111,17 @@ public class User extends BaseEntity {
         this.usernameChangedAt = Instant.now();
     }
 
+    public void anonymize(String anonymousUsername, String anonymousEmail, String displayName) {
+        this.username = anonymousUsername;
+        this.email = anonymousEmail;
+        this.displayName = displayName;
+        this.passwordHash = "";
+        this.bio = null;
+        this.githubUsername = null;
+        this.websiteUrl = null;
+        this.deletedAt = Instant.now();
+    }
+
     public void promoteToAdmin() {
         this.role = Role.ADMIN;
     }

@@ -1,9 +1,11 @@
 package com.application.devhub.user;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -20,6 +22,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("select u from User u where lower(u.username) = lower(:username)")
     Optional<User> findByUsername(@Param("username") String username);
+
+    @Query("select u from User u where u.deactivatedAt < :cutoff and u.deletedAt is null order by u.deactivatedAt")
+    List<User> findDueForPurge(@Param("cutoff") java.time.Instant cutoff, Pageable pageable);
 
     @Query("select count(u) > 0 from User u where lower(u.username) = lower(:username)")
     boolean existsByUsername(@Param("username") String username);

@@ -1,9 +1,11 @@
 package com.application.devhub.moderation;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,6 +15,10 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
 
     @Query("select r.reporterId from Report r where r.caseId = :caseId")
     List<UUID> reporterIdsOf(@Param("caseId") UUID caseId);
+
+    @Modifying
+    @Query(value = "DELETE FROM reports WHERE created_at < :before", nativeQuery = true)
+    int deleteReportsBefore(@Param("before") Instant before);
 
     @Query(value = """
             SELECT count(*) FROM reports r

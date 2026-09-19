@@ -85,6 +85,10 @@ devhub:
     fan-out-chunk: ${NOTIFICATION_FAN_OUT_CHUNK:1000}
     page-size: ${NOTIFICATION_PAGE_SIZE:20}
     retention: ${NOTIFICATION_RETENTION:90d}
+  account:
+    grace-period: ${ACCOUNT_GRACE_PERIOD:30d}
+    username-hold: ${ACCOUNT_USERNAME_HOLD:90d}
+    purge-batch-size: ${ACCOUNT_PURGE_BATCH_SIZE:50}
   moderation:
     auto-hide-reporters: ${MODERATION_AUTO_HIDE_REPORTERS:3}
     reporter-min-age-days: ${MODERATION_REPORTER_MIN_AGE_DAYS:7}

@@ -36,6 +36,12 @@ public interface ConversationMemberRepository extends JpaRepository<Conversation
             """)
     List<ConversationMember> findReachable(@Param("conversationId") UUID conversationId);
 
+    @Query("""
+            select m.key.conversationId from ConversationMember m, Conversation c
+            where c.id = m.key.conversationId and m.key.userId = :userId and m.status = 'ACTIVE' and c.kind = 'GROUP'
+            """)
+    List<UUID> activeGroupsOf(@Param("userId") UUID userId);
+
     @Query("select m from ConversationMember m where m.key.conversationId = :conversationId")
     List<ConversationMember> findAllMembers(@Param("conversationId") UUID conversationId);
 }
