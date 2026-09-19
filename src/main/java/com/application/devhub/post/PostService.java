@@ -1,5 +1,6 @@
 package com.application.devhub.post;
 
+import com.application.devhub.block.Reachability;
 import com.application.devhub.common.api.ApiException;
 import com.application.devhub.notification.ActivityPublisher;
 import com.application.devhub.notification.NotificationWriter;
@@ -17,12 +18,13 @@ public class PostService {
     private final PostLikeRepository likeRepository;
     private final ActivityPublisher activityPublisher;
     private final NotificationWriter notificationWriter;
+    private final Reachability reachability;
 
     @Transactional
     public UUID create(UUID authorId, CreatePostRequest request) {
         Post post = request.replyToId() == null
                 ? Post.original(authorId, request.content())
-                : Post.replyTo(livePost(request.replyToId()), authorId, request.content());
+                : Post.replyTo(reachablePost(authorId, request.replyToId()), authorId, request.content());
         UUID id = postRepository.saveAndFlush(post).getId();
         if (post.isReply()) {
             activityPublisher.replied(authorId, id);
@@ -44,7 +46,7 @@ public class PostService {
 
     @Transactional
     public void like(UUID userId, UUID postId) {
-        livePost(postId);
+        reachablePost(userId, postId);
         if (likeRepository.like(postId, userId) > 0) {
             activityPublisher.likeChanged(userId, postId);
         }
@@ -55,6 +57,14 @@ public class PostService {
         if (likeRepository.unlike(postId, userId) > 0) {
             activityPublisher.likeChanged(userId, postId);
         }
+    }
+
+    private Post reachablePost(UUID userId, UUID postId) {
+        Post post = livePost(postId);
+        if (!reachability.canReach(userId, post.getAuthorId())) {
+            throw ApiException.notFound();
+        }
+        return post;
     }
 
     private Post livePost(UUID postId) {

@@ -40,6 +40,11 @@ public class ChatQueries {
                    me.status AS my_status, me.read_seq AS my_read_seq
             FROM conversations c
             JOIN conversation_members me ON me.conversation_id = c.id AND me.user_id = :viewer
+            WHERE NOT (c.kind = 'DIRECT' AND EXISTS (
+                SELECT 1 FROM conversation_members other
+                JOIN blocks b ON (b.blocker_id = :viewer AND b.blocked_id = other.user_id)
+                              OR (b.blocker_id = other.user_id AND b.blocked_id = :viewer)
+                WHERE other.conversation_id = c.id AND other.user_id <> :viewer))
             """;
     private static final String MEMBERS = """
             SELECT cm.conversation_id, u.id, u.username, u.display_name, cm.role, cm.status, cm.delivered_seq, cm.read_seq
@@ -78,7 +83,7 @@ public class ChatQueries {
         KeysetCursor position = KeysetCursor.decode(cursor);
         String keyset = position == null ? ""
                 : " AND (COALESCE(c.last_message_at, c.created_at), c.id) < (CAST(:cursorAt AS timestamptz), CAST(:cursorId AS uuid))";
-        var query = jdbcClient.sql(CONVERSATIONS + " WHERE me.status = 'ACTIVE' AND c.last_seq > 0" + keyset
+        var query = jdbcClient.sql(CONVERSATIONS + " AND me.status = 'ACTIVE' AND c.last_seq > 0" + keyset
                         + " ORDER BY activity_at DESC, c.id DESC LIMIT :limit")
                 .param("viewer", viewerId)
                 .param("limit", CONVERSATION_PAGE_SIZE + 1);
@@ -94,7 +99,7 @@ public class ChatQueries {
 
     @Transactional(readOnly = true)
     public List<ConversationView> requests(UUID viewerId) {
-        List<ConversationRow> rows = jdbcClient.sql(CONVERSATIONS + " WHERE me.status = 'REQUEST' AND c.last_seq > 0"
+        List<ConversationRow> rows = jdbcClient.sql(CONVERSATIONS + " AND me.status = 'REQUEST' AND c.last_seq > 0"
                         + " ORDER BY activity_at DESC, c.id DESC LIMIT :limit")
                 .param("viewer", viewerId)
                 .param("limit", REQUESTS_LIMIT)
@@ -105,7 +110,7 @@ public class ChatQueries {
 
     @Transactional(readOnly = true)
     public ConversationView conversation(UUID viewerId, UUID conversationId) {
-        ConversationRow row = jdbcClient.sql(CONVERSATIONS + " WHERE c.id = :conversationId AND me.status IN ('ACTIVE', 'REQUEST')")
+        ConversationRow row = jdbcClient.sql(CONVERSATIONS + " AND c.id = :conversationId AND me.status IN ('ACTIVE', 'REQUEST')")
                 .param("viewer", viewerId)
                 .param("conversationId", conversationId)
                 .query((result, index) -> ConversationRow.of(result))

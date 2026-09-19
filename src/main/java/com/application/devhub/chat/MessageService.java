@@ -1,5 +1,6 @@
 package com.application.devhub.chat;
 
+import com.application.devhub.block.BlockRepository;
 import com.application.devhub.common.api.ApiException;
 import com.application.devhub.common.api.ErrorCode;
 import com.application.devhub.notification.ActivityPublisher;
@@ -23,6 +24,8 @@ public class MessageService {
     private final ApplicationEventPublisher events;
     private final OutboxPublisher outboxPublisher;
     private final ActivityPublisher activityPublisher;
+    private final ConversationRepository conversationRepository;
+    private final BlockRepository blockRepository;
 
     @Transactional
     public UUID send(UUID senderId, UUID conversationId, SendMessageRequest request) {
@@ -31,6 +34,9 @@ public class MessageService {
                 .orElseThrow(ApiException::notFound);
         if (!member.isActive()) {
             throw ApiException.of(ErrorCode.CONVERSATION_REQUEST_PENDING);
+        }
+        if (blockedDirect(senderId, conversationId)) {
+            throw ApiException.notFound();
         }
         var duplicate = messageRepository.findBySenderIdAndClientMessageId(senderId, request.clientMessageId());
         if (duplicate.isPresent()) {
@@ -54,6 +60,16 @@ public class MessageService {
             activityPublisher.requestChanged(senderId, conversationId);
         }
         return message.getId();
+    }
+
+    private boolean blockedDirect(UUID senderId, UUID conversationId) {
+        boolean direct = conversationRepository.kindOf(conversationId)
+                .map(kind -> kind == ConversationKind.DIRECT)
+                .orElse(false);
+        return direct && memberRepository.findAllMembers(conversationId).stream()
+                .map(ConversationMember::userId)
+                .filter(userId -> !userId.equals(senderId))
+                .anyMatch(userId -> blockRepository.existsBetween(senderId, userId));
     }
 
     private boolean hasPendingRequest(UUID conversationId) {

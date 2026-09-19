@@ -20,6 +20,9 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
                        clock_timestamp(), clock_timestamp()
                 FROM users u
                 WHERE u.id IN (:recipientIds)
+                  AND NOT EXISTS (SELECT 1 FROM blocks b
+                                  WHERE (b.blocker_id = u.id AND b.blocked_id = :actorId)
+                                     OR (b.blocker_id = :actorId AND b.blocked_id = u.id))
                 ON CONFLICT (recipient_id, group_key) WHERE seen_at IS NULL DO UPDATE SET
                     updated_at = clock_timestamp(),
                     push_due_at = COALESCE(notifications.push_due_at,
@@ -54,6 +57,16 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
             """, nativeQuery = true)
     int withdraw(@Param("recipientId") UUID recipientId, @Param("groupKey") String groupKey,
                  @Param("actorId") UUID actorId);
+
+    @Modifying
+    @Query(value = """
+            DELETE FROM notification_actors a
+            USING notifications n
+            WHERE a.notification_id = n.id
+              AND ((n.recipient_id = :first AND a.actor_id = :second)
+                OR (n.recipient_id = :second AND a.actor_id = :first))
+            """, nativeQuery = true)
+    int withdrawBetween(@Param("first") UUID first, @Param("second") UUID second);
 
     @Modifying
     @Query(value = "DELETE FROM notification_actors WHERE subject_id = :subjectId", nativeQuery = true)

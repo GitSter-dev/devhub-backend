@@ -53,6 +53,18 @@ public class User extends BaseEntity {
     @Column(name = "username_changed_at")
     private Instant usernameChangedAt;
 
+    @Column(name = "suspended_until")
+    private Instant suspendedUntil;
+
+    @Column(name = "banned_at")
+    private Instant bannedAt;
+
+    @Column(name = "deactivated_at")
+    private Instant deactivatedAt;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
     public User(String username, String displayName, String email, String passwordHash) {
         this.username = username;
         this.displayName = displayName;
@@ -97,5 +109,50 @@ public class User extends BaseEntity {
     public void rename(String username) {
         this.username = username;
         this.usernameChangedAt = Instant.now();
+    }
+
+    public boolean isBanned() {
+        return bannedAt != null;
+    }
+
+    public boolean isSuspendedAt(Instant now) {
+        return suspendedUntil != null && suspendedUntil.isAfter(now);
+    }
+
+    public boolean isDeactivated() {
+        return deactivatedAt != null;
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
+    }
+
+    public boolean isVisible() {
+        return isEmailVerified() && !isBanned() && !isDeactivated();
+    }
+
+    public void suspendUntil(Instant until) {
+        this.suspendedUntil = until;
+    }
+
+    public void ban() {
+        if (bannedAt == null) {
+            this.bannedAt = Instant.now();
+        }
+    }
+
+    public void reinstate() {
+        this.suspendedUntil = null;
+        this.bannedAt = null;
+    }
+
+    public void deactivate() {
+        if (deactivatedAt == null) {
+            this.deactivatedAt = Instant.now();
+        }
+    }
+
+    public void reactivate() {
+        this.deactivatedAt = null;
     }
 }

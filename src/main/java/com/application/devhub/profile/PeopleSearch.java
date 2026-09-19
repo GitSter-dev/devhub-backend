@@ -1,5 +1,6 @@
 package com.application.devhub.profile;
 
+import com.application.devhub.common.visibility.VisibilitySql;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
@@ -19,7 +20,7 @@ public class PeopleSearch {
                    (SELECT count(*) FROM follows f WHERE f.followee_id = u.id) AS followers
             FROM users u
             WHERE u.id <> :me
-              AND u.email_verified_at IS NOT NULL
+              AND %s
               AND (lower(u.username) LIKE :usernamePrefix ESCAPE '\\'
                    OR (' ' || lower(immutable_unaccent(u.display_name))) LIKE lower(immutable_unaccent(:wordPrefix)) ESCAPE '\\'
                    OR word_similarity(:term, lower(u.username)) > :threshold
@@ -36,7 +37,7 @@ public class PeopleSearch {
                      followers DESC,
                      u.username
             LIMIT :limit
-            """;
+            """.formatted(VisibilitySql.visibleUser("me", "u"));
 
     private static final double FUZZY_THRESHOLD = 0.4;
 

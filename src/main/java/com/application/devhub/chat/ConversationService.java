@@ -1,5 +1,6 @@
 package com.application.devhub.chat;
 
+import com.application.devhub.block.Reachability;
 import com.application.devhub.common.api.ApiException;
 import com.application.devhub.common.api.ErrorCode;
 import com.application.devhub.follow.FollowRepository;
@@ -31,13 +32,14 @@ public class ConversationService {
     private final ReceiptService receiptService;
     private final ApplicationEventPublisher events;
     private final ActivityPublisher activityPublisher;
+    private final Reachability reachability;
 
     @Transactional
     public Opened openDirect(UUID me, UUID otherId) {
         if (me.equals(otherId)) {
             throw ApiException.of(ErrorCode.CANNOT_MESSAGE_YOURSELF);
         }
-        requireVerified(List.of(otherId));
+        requireReachable(me, List.of(otherId));
         return conversationRepository.findByDirectKey(Conversation.directKey(me, otherId))
                 .map(existing -> reopen(existing, me))
                 .orElseGet(() -> startDirect(me, otherId));
@@ -49,7 +51,7 @@ public class ConversationService {
         if (others.size() + 1 > MAX_GROUP_MEMBERS) {
             throw ApiException.of(ErrorCode.GROUP_TOO_LARGE);
         }
-        requireVerified(others);
+        requireReachable(owner, others);
         Conversation group = conversationRepository.save(Conversation.group(owner, title));
         memberRepository.save(ConversationMember.of(group.getId(), owner, MemberRole.OWNER, MemberStatus.ACTIVE));
         others.forEach(userId -> memberRepository.save(
@@ -76,7 +78,7 @@ public class ConversationService {
     public void addMembers(UUID me, UUID conversationId, List<UUID> userIds) {
         ownedGroup(me, conversationId);
         Set<UUID> candidates = distinctWithout(userIds, me);
-        requireVerified(candidates);
+        requireReachable(me, candidates);
         List<UUID> joining = candidates.stream()
                 .filter(userId -> memberRepository.find(conversationId, userId).map(member -> !member.isActive()).orElse(true))
                 .toList();
@@ -184,9 +186,11 @@ public class ConversationService {
                 .orElseThrow(ApiException::notFound);
     }
 
-    private void requireVerified(Iterable<UUID> userIds) {
+    private void requireReachable(UUID me, Iterable<UUID> userIds) {
         for (UUID userId : userIds) {
-            userRepository.findById(userId).filter(User::isEmailVerified).orElseThrow(ApiException::notFound);
+            if (!reachability.canReach(me, userId)) {
+                throw ApiException.notFound();
+            }
         }
     }
 

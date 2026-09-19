@@ -1,5 +1,6 @@
 package com.application.devhub.suggestion;
 
+import com.application.devhub.common.visibility.VisibilitySql;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
@@ -24,12 +25,12 @@ public class SuggestionQuery {
                    ON ut.user_id = u.id
                   AND ut.topic_slug IN (SELECT mine.topic_slug FROM user_topics mine WHERE mine.user_id = :me)
             WHERE u.id <> :me
-              AND u.email_verified_at IS NOT NULL
+              AND %s
               AND NOT EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = :me AND f.followee_id = u.id)
             GROUP BY u.id
             ORDER BY count(ut.topic_slug) DESC, followers DESC, u.created_at DESC
             LIMIT :limit
-            """;
+            """.formatted(VisibilitySql.visibleUser("me", "u"));
 
     private final JdbcClient jdbcClient;
 

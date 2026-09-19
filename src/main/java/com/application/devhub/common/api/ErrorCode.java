@@ -34,7 +34,8 @@ public enum ErrorCode {
     GROUP_TOO_LARGE(HttpStatus.BAD_REQUEST),
     NOT_GROUP_OWNER(HttpStatus.FORBIDDEN),
     CANNOT_MESSAGE_YOURSELF(HttpStatus.BAD_REQUEST),
-    CONVERSATION_REQUEST_PENDING(HttpStatus.FORBIDDEN);
+    CONVERSATION_REQUEST_PENDING(HttpStatus.FORBIDDEN),
+    CANNOT_BLOCK_SELF(HttpStatus.BAD_REQUEST);
 
     private final HttpStatus status;
 

@@ -38,6 +38,13 @@ public class NotificationWriter {
     }
 
     @Transactional
+    public void withdrawBetween(UUID first, UUID second) {
+        if (repository.withdrawBetween(first, second) > 0) {
+            events.publishEvent(new NotificationsChanged(List.of(first, second)));
+        }
+    }
+
+    @Transactional
     public void withdrawSubject(UUID subjectId) {
         List<UUID> recipientIds = repository.recipientsOfSubject(subjectId);
         if (!recipientIds.isEmpty()) {

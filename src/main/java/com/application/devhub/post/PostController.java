@@ -92,7 +92,7 @@ public class PostController implements PostApi {
     @GetMapping("/users/{username}/posts")
     public ApiEnvelope<PostPage> userPosts(JwtAuthenticationToken authentication, @PathVariable String username,
                                            @RequestParam(required = false) String cursor) {
-        UUID authorId = profileService.visibleUser(username).getId();
+        UUID authorId = profileService.visibleUser(userIdOf(authentication), username).getId();
         return ApiEnvelope.ok(threadQuery.byAuthor(userIdOf(authentication), authorId, cursor));
     }
 

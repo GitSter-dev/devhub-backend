@@ -46,7 +46,7 @@ public class ProfileController implements ProfileApi {
     @GetMapping("/{username}/followers")
     public ApiEnvelope<PersonPage> followers(JwtAuthenticationToken authentication, @PathVariable String username,
                                              @RequestParam(required = false) String cursor) {
-        UUID targetId = profileService.visibleUser(username).getId();
+        UUID targetId = profileService.visibleUser(userIdOf(authentication), username).getId();
         return ApiEnvelope.ok(followListQuery.followers(userIdOf(authentication), targetId, cursor));
     }
 
@@ -54,7 +54,7 @@ public class ProfileController implements ProfileApi {
     @GetMapping("/{username}/following")
     public ApiEnvelope<PersonPage> following(JwtAuthenticationToken authentication, @PathVariable String username,
                                              @RequestParam(required = false) String cursor) {
-        UUID targetId = profileService.visibleUser(username).getId();
+        UUID targetId = profileService.visibleUser(userIdOf(authentication), username).getId();
         return ApiEnvelope.ok(followListQuery.following(userIdOf(authentication), targetId, cursor));
     }
 

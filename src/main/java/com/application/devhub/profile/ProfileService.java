@@ -1,5 +1,6 @@
 package com.application.devhub.profile;
 
+import com.application.devhub.block.Reachability;
 import com.application.devhub.common.api.ApiException;
 import com.application.devhub.follow.FollowRepository;
 import com.application.devhub.topic.UserTopics;
@@ -22,10 +23,11 @@ public class ProfileService {
     private final HeldUsernameRepository heldUsernames;
     private final FollowRepository followRepository;
     private final UserTopics userTopics;
+    private final Reachability reachability;
 
     @Transactional(readOnly = true)
     public ProfileResponse view(UUID viewerId, String username) {
-        return toResponse(viewerId, visibleUser(username));
+        return toResponse(viewerId, visibleUser(viewerId, username));
     }
 
     @Transactional
@@ -36,12 +38,12 @@ public class ProfileService {
     }
 
     @Transactional(readOnly = true)
-    public User visibleUser(String username) {
+    public User visibleUser(UUID viewerId, String username) {
         return userRepository.findByUsername(username)
                 .or(() -> heldUsernames.findActive(username, Instant.now())
                         .map(HeldUsername::getUserId)
                         .flatMap(userRepository::findById))
-                .filter(User::isEmailVerified)
+                .filter(user -> reachability.canReach(viewerId, user))
                 .orElseThrow(ApiException::notFound);
     }
 

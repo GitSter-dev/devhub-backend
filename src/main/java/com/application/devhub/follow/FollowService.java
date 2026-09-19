@@ -1,5 +1,6 @@
 package com.application.devhub.follow;
 
+import com.application.devhub.block.Reachability;
 import com.application.devhub.common.api.ApiException;
 import com.application.devhub.common.api.ErrorCode;
 import com.application.devhub.notification.ActivityPublisher;
@@ -16,7 +17,7 @@ import java.util.UUID;
 public class FollowService {
 
     private final FollowRepository followRepository;
-    private final UserRepository userRepository;
+    private final Reachability reachability;
     private final ActivityPublisher activityPublisher;
 
     @Transactional
@@ -24,9 +25,9 @@ public class FollowService {
         if (followerId.equals(followeeId)) {
             throw ApiException.of(ErrorCode.CANNOT_FOLLOW_SELF);
         }
-        userRepository.findById(followeeId)
-                .filter(User::isEmailVerified)
-                .orElseThrow(ApiException::notFound);
+        if (!reachability.canReach(followerId, followeeId)) {
+            throw ApiException.notFound();
+        }
         if (followRepository.follow(followerId, followeeId) > 0) {
             activityPublisher.followChanged(followerId, followeeId);
         }

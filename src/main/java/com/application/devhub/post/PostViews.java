@@ -1,6 +1,7 @@
 package com.application.devhub.post;
 
 import com.application.devhub.common.pagination.KeysetCursor;
+import com.application.devhub.common.visibility.VisibilitySql;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
@@ -37,10 +38,12 @@ public class PostViews {
     private static final String AFTER = "(p.created_at, p.id) > (CAST(:cursorAt AS timestamptz), CAST(:cursorId AS uuid))";
     private static final String BEFORE = "(p.created_at, p.id) < (CAST(:cursorAt AS timestamptz), CAST(:cursorId AS uuid))";
 
+    private static final String VISIBLE = "(a.id = :viewer OR " + VisibilitySql.visibleUser("viewer", "a") + ")";
+
     private final JdbcClient jdbcClient;
 
     public Optional<PostView> byId(UUID viewerId, UUID postId) {
-        return jdbcClient.sql(SELECT + " WHERE p.id = :postId")
+        return jdbcClient.sql(SELECT + " WHERE p.id = :postId AND " + VISIBLE)
                 .param("viewer", viewerId)
                 .param("postId", postId)
                 .query((row, index) -> toView(row, viewerId))
@@ -51,7 +54,7 @@ public class PostViews {
         if (postIds.isEmpty()) {
             return List.of();
         }
-        return jdbcClient.sql(SELECT + " WHERE p.id IN (:postIds) ORDER BY p.created_at, p.id")
+        return jdbcClient.sql(SELECT + " WHERE p.id IN (:postIds) AND " + VISIBLE + " ORDER BY p.created_at, p.id")
                 .param("viewer", viewerId)
                 .param("postIds", postIds)
                 .query((row, index) -> toView(row, viewerId))
@@ -69,7 +72,8 @@ public class PostViews {
             all.put("cursorAt", cursor.timestamp());
             all.put("cursorId", cursor.id());
         }
-        return jdbcClient.sql(SELECT + " WHERE " + where + keyset + " ORDER BY " + order + " LIMIT :limit")
+        return jdbcClient.sql(SELECT + " WHERE (" + where + ") AND " + VISIBLE + keyset + " ORDER BY " + order
+                        + " LIMIT :limit")
                 .params(all)
                 .query((row, index) -> toView(row, viewerId))
                 .list();

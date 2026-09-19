@@ -39,3 +39,4 @@ src/main/resources/keys/
 ### Claude Code ###
 .claude/
 .agents/
+graphify-out/
