@@ -1,5 +1,6 @@
 package com.application.devhub.security;
 
+import com.application.devhub.user.Role;
 import com.application.devhub.realtime.RealtimeConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,6 +47,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_PATHS).permitAll()
+                        .requestMatchers("/admin/**").hasRole(Role.ADMIN.name())
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .bearerTokenResolver(bearerTokenResolver())

@@ -111,6 +111,10 @@ public class User extends BaseEntity {
         this.usernameChangedAt = Instant.now();
     }
 
+    public void promoteToAdmin() {
+        this.role = Role.ADMIN;
+    }
+
     public boolean isBanned() {
         return bannedAt != null;
     }

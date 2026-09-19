@@ -29,6 +29,12 @@ public class Post extends BaseEntity {
     @Column(name = "code_language", length = 20)
     private String codeLanguage;
 
+    @Column(name = "removed_at")
+    private Instant removedAt;
+
+    @Column(name = "hidden_at")
+    private Instant hiddenAt;
+
     @Column(name = "parent_id", updatable = false)
     private UUID parentId;
 
@@ -65,6 +71,22 @@ public class Post extends BaseEntity {
 
     public boolean isAuthoredBy(UUID userId) {
         return authorId.equals(userId);
+    }
+
+    public void remove() {
+        this.removedAt = Instant.now();
+        this.hiddenAt = null;
+    }
+
+    public void hide() {
+        if (hiddenAt == null && removedAt == null) {
+            this.hiddenAt = Instant.now();
+        }
+    }
+
+    public void restore() {
+        this.removedAt = null;
+        this.hiddenAt = null;
     }
 
     public void delete() {

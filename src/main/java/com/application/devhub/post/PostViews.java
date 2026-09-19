@@ -23,6 +23,8 @@ public class PostViews {
     private static final String SELECT = """
             SELECT p.id, p.body, p.code, p.code_language, p.created_at, p.parent_id, p.root_id,
                    p.deleted_at IS NOT NULL AS deleted,
+                   p.removed_at IS NOT NULL AS removed,
+                   p.hidden_at IS NOT NULL AS under_review,
                    a.id AS author_id, a.username AS author_username, a.display_name AS author_display_name,
                    parent_author.username AS reply_to_username,
                    parent.deleted_at IS NOT NULL AS reply_to_deleted,
@@ -38,7 +40,12 @@ public class PostViews {
     private static final String AFTER = "(p.created_at, p.id) > (CAST(:cursorAt AS timestamptz), CAST(:cursorId AS uuid))";
     private static final String BEFORE = "(p.created_at, p.id) < (CAST(:cursorAt AS timestamptz), CAST(:cursorId AS uuid))";
 
-    private static final String VISIBLE = "(a.id = :viewer OR " + VisibilitySql.visibleUser("viewer", "a") + ")";
+    private static final String NOT_REPORTED_BY_VIEWER = """
+            NOT EXISTS (SELECT 1 FROM reports r
+                        WHERE r.target_type = 'POST' AND r.target_id = p.id AND r.reporter_id = :viewer)""";
+
+    private static final String VISIBLE = "(a.id = :viewer OR (" + VisibilitySql.visibleUser("viewer", "a")
+            + " AND p.removed_at IS NULL AND p.hidden_at IS NULL AND " + NOT_REPORTED_BY_VIEWER + "))";
 
     private final JdbcClient jdbcClient;
 
@@ -109,6 +116,8 @@ public class PostViews {
                 row.getLong("like_count"),
                 row.getBoolean("liked"),
                 authorId.equals(viewerId),
-                row.getBoolean("deleted"));
+                row.getBoolean("deleted"),
+                row.getBoolean("removed"),
+                row.getBoolean("under_review"));
     }
 }

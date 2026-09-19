@@ -18,7 +18,9 @@ public record PostView(
         long likeCount,
         boolean liked,
         boolean mine,
-        boolean deleted) {
+        boolean deleted,
+        boolean removed,
+        boolean underReview) {
 
     public record Author(UUID id, String username, String displayName) {
     }

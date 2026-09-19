@@ -60,6 +60,9 @@ public class Message extends BaseEntity {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
+    @Column(name = "removed_at")
+    private Instant removedAt;
+
     public static Message text(UUID conversationId, long seq, UUID senderId, MessageContent content, UUID replyToId,
                                UUID clientMessageId) {
         Message message = new Message();
@@ -86,6 +89,17 @@ public class Message extends BaseEntity {
         message.systemTargetId = targetId;
         message.body = detail;
         return message;
+    }
+
+    public void remove() {
+        this.removedAt = Instant.now();
+        this.body = null;
+        this.code = null;
+        this.codeLanguage = null;
+    }
+
+    public void restore() {
+        this.removedAt = null;
     }
 
     public boolean isDeleted() {

@@ -7,7 +7,8 @@ public enum NotificationType {
     POST_REPLIED,
     NEW_FOLLOWER,
     FOLLOWED_POSTED,
-    MESSAGE_REQUEST;
+    MESSAGE_REQUEST,
+    REPORT_RESOLVED;
 
     public String groupKey(UUID subjectId) {
         return subjectId == null ? name() : name() + ":" + subjectId;

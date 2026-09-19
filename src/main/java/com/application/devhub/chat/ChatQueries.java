@@ -60,9 +60,10 @@ public class ChatQueries {
             """;
     private static final String MESSAGES = """
             SELECT m.id, m.conversation_id, m.seq, m.kind, m.body, m.code, m.code_language, m.created_at,
-                   m.deleted_at IS NOT NULL AS deleted, m.client_message_id,
+                   (m.deleted_at IS NOT NULL OR m.removed_at IS NOT NULL) AS deleted, m.client_message_id,
                    s.id AS sender_id, s.username AS sender_username, s.display_name AS sender_display_name,
-                   r.id AS reply_id, r.seq AS reply_seq, r.deleted_at IS NOT NULL AS reply_deleted,
+                   r.id AS reply_id, r.seq AS reply_seq,
+                   (r.deleted_at IS NOT NULL OR r.removed_at IS NOT NULL) AS reply_deleted,
                    rs.display_name AS reply_sender_name,
                    left(COALESCE(r.body, CASE WHEN r.code IS NOT NULL THEN 'Code snippet' END), 120) AS reply_preview,
                    m.system_type,

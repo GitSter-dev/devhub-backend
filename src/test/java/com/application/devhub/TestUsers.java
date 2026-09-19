@@ -35,6 +35,13 @@ public class TestUsers {
         return userRepository.save(user).getId();
     }
 
+    public UUID admin(String username) {
+        User user = new User(username, username, username + "@dev.io", passwordEncoder.encode(PASSWORD));
+        user.markEmailVerified();
+        user.promoteToAdmin();
+        return userRepository.save(user).getId();
+    }
+
     public UUID unverified(String username) {
         return userRepository.save(new User(username, username, username + "@dev.io", passwordEncoder.encode(PASSWORD)))
                 .getId();

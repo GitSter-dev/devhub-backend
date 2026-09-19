@@ -6,6 +6,7 @@ import com.application.devhub.ratelimit.RateLimitPolicy;
 import com.application.devhub.ratelimit.RateLimiter;
 import com.application.devhub.security.AuthUser;
 import com.application.devhub.security.TokenService;
+import com.application.devhub.user.AccountAccess;
 import com.application.devhub.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -25,11 +26,13 @@ public class SessionService {
     private final RefreshTokenService refreshTokenService;
     private final UserRepository userRepository;
     private final RateLimiter rateLimiter;
+    private final AccountAccess accountAccess;
 
     public TokenPair login(String identifier, String password) {
         String accountKey = identifier.toLowerCase(Locale.ROOT);
         rateLimiter.ensureAvailable(RateLimitPolicy.LOGIN_FAILURES, accountKey);
         AuthUser user = authenticate(identifier, password, accountKey);
+        userRepository.findById(user.id()).ifPresent(accountAccess::ensureCanSignIn);
         IssuedRefreshToken refreshToken = refreshTokenService.startSession(user.id());
         return TokenPair.of(tokenService.issueAccessToken(user, refreshToken.familyId()), refreshToken);
     }
@@ -37,8 +40,8 @@ public class SessionService {
     public TokenPair refresh(String rawRefreshToken, String idempotencyKey) {
         Rotation rotation = refreshTokenService.rotate(rawRefreshToken, idempotencyKey);
         AuthUser user = userRepository.findById(rotation.userId())
+                .filter(accountAccess::canContinueSession)
                 .map(AuthUser::from)
-                .filter(AuthUser::isEnabled)
                 .orElseThrow(() -> ApiException.of(ErrorCode.INVALID_REFRESH_TOKEN));
         return TokenPair.of(tokenService.issueAccessToken(user, rotation.refreshToken().familyId()), rotation.refreshToken());
     }
