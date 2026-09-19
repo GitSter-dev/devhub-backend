@@ -1,0 +1,89 @@
+server:
+  forward-headers-strategy: ${FORWARD_HEADERS_STRATEGY:none}
+
+spring:
+  application:
+    name: DevHub
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+
+springdoc:
+  override-with-generic-response: false
+  default-produces-media-type: application/json
+  api-docs:
+    enabled: ${API_DOCS_ENABLED:true}
+  swagger-ui:
+    enabled: ${API_DOCS_ENABLED:true}
+
+devhub:
+  api-docs:
+    title: DevHub API
+    version: '@project.version@'
+    description: Backend API for the DevHub mobile app. Every response uses the ApiEnvelope shape; errors carry a stable error.code the client can switch on.
+  mail:
+    from: ${MAIL_FROM:DevHub <no-reply@devhub.local>}
+    locale: ${MAIL_LOCALE:en}
+  scheduling:
+    enabled: ${SCHEDULING_ENABLED:true}
+    cleanup-cron: ${CLEANUP_CRON:0 30 3 * * *}
+  outbox:
+    poll-interval: ${OUTBOX_POLL_INTERVAL:5s}
+    batch-size: ${OUTBOX_BATCH_SIZE:20}
+    max-attempts: ${OUTBOX_MAX_ATTEMPTS:5}
+    retry-backoff: ${OUTBOX_RETRY_BACKOFF:30s}
+    sent-retention: ${OUTBOX_SENT_RETENTION:7d}
+    failed-retention: ${OUTBOX_FAILED_RETENTION:30d}
+  codes:
+    email-verification:
+      ttl: ${VERIFICATION_CODE_TTL:15m}
+      max-attempts: ${VERIFICATION_MAX_ATTEMPTS:5}
+      resend-cooldown: ${VERIFICATION_RESEND_COOLDOWN:60s}
+      daily-limit: ${VERIFICATION_DAILY_LIMIT:10}
+    password-reset:
+      ttl: ${PASSWORD_RESET_CODE_TTL:15m}
+      max-attempts: ${PASSWORD_RESET_MAX_ATTEMPTS:5}
+      resend-cooldown: ${PASSWORD_RESET_RESEND_COOLDOWN:60s}
+      daily-limit: ${PASSWORD_RESET_DAILY_LIMIT:3}
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    limits:
+      signup: { capacity: 10, period: 1h }
+      login: { capacity: 30, period: 5m }
+      login-failures: { capacity: 10, period: 15m }
+      refresh: { capacity: 60, period: 1m }
+      verify-email: { capacity: 20, period: 10m }
+      reset-password: { capacity: 20, period: 10m }
+      resend-verification: { capacity: 5, period: 10m }
+      forgot-password: { capacity: 5, period: 10m }
+      test-notification: { capacity: 3, period: 10m }
+  session:
+    refresh-token-ttl: ${REFRESH_TOKEN_TTL:30d}
+    refresh-replay-window: ${REFRESH_REPLAY_WINDOW:60s}
+  idempotency:
+    ttl: ${IDEMPOTENCY_TTL:24h}
+  realtime:
+    heartbeat: ${REALTIME_HEARTBEAT:10s}
+    time-to-first-message: ${REALTIME_TIME_TO_FIRST_MESSAGE:10s}
+    allowed-origins: ${REALTIME_ALLOWED_ORIGINS:*}
+  push:
+    enabled: ${PUSH_ENABLED:false}
+    credentials: ${FIREBASE_CREDENTIALS:}
+    locale: ${PUSH_LOCALE:en}
+  jwt:
+    issuer: ${JWT_ISSUER:devhub}
+    access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:15m}
+    public-key: ${JWT_PUBLIC_KEY_LOCATION:classpath:keys/public.pem}
+    private-key: ${JWT_PRIVATE_KEY_LOCATION:classpath:keys/private.pem}
