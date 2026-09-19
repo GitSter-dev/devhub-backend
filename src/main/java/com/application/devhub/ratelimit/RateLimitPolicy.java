@@ -11,5 +11,7 @@ public enum RateLimitPolicy {
     FORGOT_PASSWORD,
     TEST_NOTIFICATION,
     FOLLOW,
-    SEARCH
+    SEARCH,
+    POSTING,
+    LIKE
 }

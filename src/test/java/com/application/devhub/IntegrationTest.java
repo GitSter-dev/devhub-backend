@@ -31,7 +31,7 @@ public abstract class IntegrationTest {
 
     @AfterEach
     void truncateTables() {
-        jdbcTemplate.execute("TRUNCATE users, outbox_events, idempotency_records, devices, user_topics, follows, held_usernames CASCADE");
+        jdbcTemplate.execute("TRUNCATE users, outbox_events, idempotency_records, devices, user_topics, follows, held_usernames, posts, post_likes CASCADE");
     }
 
     @DynamicPropertySource

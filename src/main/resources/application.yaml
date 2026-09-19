@@ -71,6 +71,8 @@ devhub:
       test-notification: { capacity: 3, period: 10m }
       follow: { capacity: 100, period: 10m }
       search: { capacity: 120, period: 1m }
+      posting: { capacity: 30, period: 10m }
+      like: { capacity: 300, period: 10m }
   session:
     refresh-token-ttl: ${REFRESH_TOKEN_TTL:30d}
     refresh-replay-window: ${REFRESH_REPLAY_WINDOW:60s}
