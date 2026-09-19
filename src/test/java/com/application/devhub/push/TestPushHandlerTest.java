@@ -25,7 +25,7 @@ class TestPushHandlerTest {
     void dispatchesTheLocalizedTestMessageToTheUser() {
         handler.handle(new OutboxEvent(OutboxEventType.PUSH_TEST, "{\"userId\":\"" + USER + "\"}"));
 
-        verify(dispatcher).dispatch(USER, new PushMessage("Notifications are on", "It works.", Map.of("kind", "test")));
+        verify(dispatcher).dispatch(USER, PushMessage.of("Notifications are on", "It works.", Map.of("kind", "test")));
     }
 
     private static StaticMessageSource messages() {

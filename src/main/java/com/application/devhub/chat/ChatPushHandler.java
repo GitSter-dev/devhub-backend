@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
 
-import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -20,15 +19,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ChatPushHandler implements OutboxEventHandler {
 
-    private static final String KIND = "chat";
-    private static final int PREVIEW_LENGTH = 100;
-    private static final String CODE_PREVIEW = "Sent a code snippet";
-
     private final JsonMapper jsonMapper;
     private final ChatQueries chatQueries;
     private final ConversationRepository conversationRepository;
     private final ConversationMemberRepository memberRepository;
     private final PushDispatcher pushDispatcher;
+    private final ChatPushText pushText;
 
     @Override
     public OutboxEventType type() {
@@ -46,27 +42,10 @@ public class ChatPushHandler implements OutboxEventHandler {
         if (conversation == null) {
             return;
         }
-        PushMessage push = pushFor(payload.conversationId(), conversation, message);
         memberRepository.findActive(conversation.getId()).stream()
-                .map(ConversationMember::userId)
-                .filter(userId -> !userId.equals(message.sender().id()))
-                .forEach(userId -> deliver(userId, push));
-    }
-
-    static PushMessage pushFor(UUID conversationId, Conversation conversation, MessageView message) {
-        String preview = previewOf(message);
-        String sender = message.sender().displayName();
-        String title = conversation.isGroup() ? conversation.getTitle() : sender;
-        String body = conversation.isGroup() ? sender + ": " + preview : preview;
-        return new PushMessage(title, body, Map.of("kind", KIND, "conversationId", conversationId.toString(),
-                "messageId", message.id().toString()));
-    }
-
-    private static String previewOf(MessageView message) {
-        if (message.body() == null) {
-            return CODE_PREVIEW;
-        }
-        return message.body().length() <= PREVIEW_LENGTH ? message.body() : message.body().substring(0, PREVIEW_LENGTH) + "…";
+                .filter(member -> !member.userId().equals(message.sender().id()))
+                .forEach(member -> deliver(member.userId(), pushText.pushFor(payload.conversationId(), conversation,
+                        message, conversation.getLastSeq() - member.getReadSeq())));
     }
 
     private void deliver(UUID userId, PushMessage push) {

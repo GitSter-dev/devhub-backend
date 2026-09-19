@@ -18,7 +18,7 @@ import static org.mockito.Mockito.when;
 
 class FcmPushSenderTest {
 
-    private static final PushMessage MESSAGE = new PushMessage("Title", "Body", Map.of("kind", "test"));
+    private static final PushMessage MESSAGE = PushMessage.of("Title", "Body", Map.of("kind", "test"));
 
     private final FirebaseMessaging messaging = mock(FirebaseMessaging.class);
     private final FcmPushSender sender = new FcmPushSender(messaging);

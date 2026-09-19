@@ -1,5 +1,6 @@
 package com.application.devhub.chat;
 
+import com.application.devhub.realtime.RealtimeEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
@@ -14,8 +15,6 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 public class ChatRealtimeRelay {
-
-    public static final String EVENTS_QUEUE = "/queue/events";
 
     private final SimpMessagingTemplate messagingTemplate;
     private final ConversationMemberRepository memberRepository;
@@ -73,6 +72,6 @@ public class ChatRealtimeRelay {
     }
 
     private void send(Collection<UUID> userIds, RealtimeEvent event) {
-        userIds.forEach(userId -> messagingTemplate.convertAndSendToUser(userId.toString(), EVENTS_QUEUE, event));
+        userIds.forEach(userId -> messagingTemplate.convertAndSendToUser(userId.toString(), RealtimeEvent.QUEUE, event));
     }
 }

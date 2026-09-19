@@ -34,7 +34,7 @@ public class TestPushHandler implements OutboxEventHandler {
     }
 
     private PushMessage message() {
-        return new PushMessage(
+        return PushMessage.of(
                 messageSource.getMessage("push.test.title", null, properties.locale()),
                 messageSource.getMessage("push.test.body", null, properties.locale()),
                 Map.of("kind", KIND));

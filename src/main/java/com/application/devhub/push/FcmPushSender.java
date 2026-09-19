@@ -36,9 +36,7 @@ public class FcmPushSender implements PushSender {
                 .putAllData(message.data())
                 .setAndroidConfig(AndroidConfig.builder()
                         .setPriority(AndroidConfig.Priority.HIGH)
-                        .setNotification(AndroidNotification.builder()
-                                .setChannelId(ANDROID_CHANNEL)
-                                .build())
+                        .setNotification(androidNotification(message))
                         .build())
                 .build();
         try {
@@ -46,6 +44,14 @@ public class FcmPushSender implements PushSender {
         } catch (FirebaseMessagingException e) {
             throw new PushDeliveryException("FCM rejected the batch", e);
         }
+    }
+
+    private static AndroidNotification androidNotification(PushMessage message) {
+        AndroidNotification.Builder builder = AndroidNotification.builder().setChannelId(ANDROID_CHANNEL);
+        if (message.group() != null) {
+            builder.setTag(message.group());
+        }
+        return builder.build();
     }
 
     private List<PushResult> resultsOf(List<String> tokens, BatchResponse batch) {

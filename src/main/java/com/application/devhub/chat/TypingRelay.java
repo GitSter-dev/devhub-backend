@@ -1,5 +1,6 @@
 package com.application.devhub.chat;
 
+import com.application.devhub.realtime.RealtimeEvent;
 import com.application.devhub.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
 class PushDispatcherTest {
 
     private static final UUID USER = UUID.randomUUID();
-    private static final PushMessage MESSAGE = new PushMessage("Title", "Body", Map.of("kind", "test"));
+    private static final PushMessage MESSAGE = PushMessage.of("Title", "Body", Map.of("kind", "test"));
 
     private final DeviceRegistry registry = mock(DeviceRegistry.class);
     private final PushSender sender = mock(PushSender.class);
