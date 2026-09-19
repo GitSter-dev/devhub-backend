@@ -2,6 +2,8 @@ package com.application.devhub.chat;
 
 import com.application.devhub.common.api.ApiException;
 import com.application.devhub.common.api.ErrorCode;
+import com.application.devhub.outbox.OutboxEventType;
+import com.application.devhub.outbox.OutboxPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ public class MessageService {
     private final MessageLog messageLog;
     private final ReceiptService receiptService;
     private final ApplicationEventPublisher events;
+    private final OutboxPublisher outboxPublisher;
 
     @Transactional
     public UUID send(UUID senderId, UUID conversationId, SendMessageRequest request) {
@@ -41,8 +44,10 @@ public class MessageService {
         }
         Message message = messageLog.appendText(conversationId, senderId, request.content(), request.replyToId(),
                 request.clientMessageId());
-        receiptService.advance(senderId, conversationId, message.getSeq(), message.getSeq());
+        receiptService.recordOwnMessage(senderId, conversationId, message.getSeq());
         events.publishEvent(new ChatEvents.MessageCreated(conversationId, message.getId()));
+        outboxPublisher.publish(OutboxEventType.CHAT_MESSAGE,
+                new ChatPushHandler.ChatMessagePayload(conversationId, message.getId()));
         return message.getId();
     }
 

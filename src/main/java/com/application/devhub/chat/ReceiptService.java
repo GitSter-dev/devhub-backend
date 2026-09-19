@@ -31,6 +31,11 @@ public class ReceiptService {
     }
 
     @Transactional
+    public void recordOwnMessage(UUID senderId, UUID conversationId, long seq) {
+        memberRepository.findForUpdate(conversationId, senderId).ifPresent(member -> member.advance(seq, seq, seq));
+    }
+
+    @Transactional
     public void catchUp(UUID conversationId, Collection<UUID> userIds, long lastSeq) {
         userIds.forEach(userId -> memberRepository.find(conversationId, userId).ifPresent(member -> member.catchUp(lastSeq)));
     }

@@ -35,4 +35,7 @@ public interface ConversationMemberRepository extends JpaRepository<Conversation
               and m.status in (com.application.devhub.chat.MemberStatus.ACTIVE, com.application.devhub.chat.MemberStatus.REQUEST)
             """)
     List<ConversationMember> findReachable(@Param("conversationId") UUID conversationId);
+
+    @Query("select m from ConversationMember m where m.key.conversationId = :conversationId")
+    List<ConversationMember> findAllMembers(@Param("conversationId") UUID conversationId);
 }

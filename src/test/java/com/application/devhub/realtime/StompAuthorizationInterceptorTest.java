@@ -41,6 +41,20 @@ class StompAuthorizationInterceptorTest {
     }
 
     @Test
+    void typingIntoAConversationIsTheOnlyAllowedSend() {
+        assertAllowed(StompFrames.frame(StompCommand.SEND,
+                "/app/conversations/7c9e6679-7425-40de-944b-e07fc1f90ae7/typing", USER));
+        assertThatThrownBy(() -> interceptor.preSend(
+                StompFrames.frame(StompCommand.SEND, "/app/conversations/not-a-uuid/typing", USER), null))
+                .isInstanceOf(MessageDeliveryException.class)
+                .hasMessage("FORBIDDEN");
+        assertThatThrownBy(() -> interceptor.preSend(
+                StompFrames.frame(StompCommand.SEND, "/app/anything-else", USER), null))
+                .isInstanceOf(MessageDeliveryException.class)
+                .hasMessage("FORBIDDEN");
+    }
+
+    @Test
     void subscribingToAnotherPrefixIsForbidden() {
         assertThatThrownBy(() -> interceptor.preSend(
                 StompFrames.frame(StompCommand.SUBSCRIBE, "/queue/everyone", USER), null))

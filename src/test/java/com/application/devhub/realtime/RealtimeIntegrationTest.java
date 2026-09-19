@@ -11,18 +11,9 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.socket.CloseStatus;
-import org.springframework.web.socket.TextMessage;
-import org.springframework.web.socket.WebSocketSession;
-import org.springframework.web.socket.client.standard.StandardWebSocketClient;
-import org.springframework.web.socket.handler.TextWebSocketHandler;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -33,7 +24,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class RealtimeIntegrationTest extends IntegrationTest {
 
     private static final String PASSWORD = "supersecret";
-    private static final long TIMEOUT_SECONDS = 5;
 
     @LocalServerPort
     private int port;
@@ -59,14 +49,14 @@ class RealtimeIntegrationTest extends IntegrationTest {
 
     @Test
     void aClientWithAValidAccessTokenIsConnected() throws Exception {
-        Socket socket = connect(login().accessToken());
+        StompTestSocket socket = connect(login().accessToken());
 
         assertThat(socket.nextFrame()).startsWith("CONNECTED");
     }
 
     @Test
     void aClientWithoutATokenIsRejectedAndDisconnected() throws Exception {
-        Socket socket = connect(null);
+        StompTestSocket socket = connect(null);
 
         assertThat(socket.nextFrame()).startsWith("ERROR").contains("message:UNAUTHORIZED");
         assertThat(socket.closeStatus()).isNotNull();
@@ -74,7 +64,7 @@ class RealtimeIntegrationTest extends IntegrationTest {
 
     @Test
     void aForgedTokenIsRejected() throws Exception {
-        Socket socket = connect("not-a-jwt");
+        StompTestSocket socket = connect("not-a-jwt");
 
         assertThat(socket.nextFrame()).startsWith("ERROR").contains("message:UNAUTHORIZED");
     }
@@ -84,14 +74,14 @@ class RealtimeIntegrationTest extends IntegrationTest {
         Tokens tokens = login();
         logout(tokens);
 
-        Socket socket = connect(tokens.accessToken());
+        StompTestSocket socket = connect(tokens.accessToken());
 
         assertThat(socket.nextFrame()).startsWith("ERROR").contains("message:SESSION_ENDED");
     }
 
     @Test
     void aLoginElsewhereClosesTheOldSocketAsReplaced() throws Exception {
-        Socket socket = connect(login().accessToken());
+        StompTestSocket socket = connect(login().accessToken());
         assertThat(socket.nextFrame()).startsWith("CONNECTED");
 
         login();
@@ -102,7 +92,7 @@ class RealtimeIntegrationTest extends IntegrationTest {
     @Test
     void loggingOutClosesTheSocketAsEnded() throws Exception {
         Tokens tokens = login();
-        Socket socket = connect(tokens.accessToken());
+        StompTestSocket socket = connect(tokens.accessToken());
         assertThat(socket.nextFrame()).startsWith("CONNECTED");
 
         logout(tokens);
@@ -112,7 +102,7 @@ class RealtimeIntegrationTest extends IntegrationTest {
 
     @Test
     void aClientHeartbeatKeepsTheConnectionUsable() throws Exception {
-        Socket socket = connect(login().accessToken());
+        StompTestSocket socket = connect(login().accessToken());
         assertThat(socket.nextFrame()).startsWith("CONNECTED");
 
         socket.send("\n");
@@ -123,7 +113,7 @@ class RealtimeIntegrationTest extends IntegrationTest {
 
     @Test
     void subscribingOutsideTheUserQueuesIsForbidden() throws Exception {
-        Socket socket = connect(login().accessToken());
+        StompTestSocket socket = connect(login().accessToken());
         assertThat(socket.nextFrame()).startsWith("CONNECTED");
 
         socket.send("SUBSCRIBE\nid:1\ndestination:/queue/everyone\n\n\0");
@@ -133,7 +123,7 @@ class RealtimeIntegrationTest extends IntegrationTest {
 
     @Test
     void sendingToTheServerIsForbidden() throws Exception {
-        Socket socket = connect(login().accessToken());
+        StompTestSocket socket = connect(login().accessToken());
         assertThat(socket.nextFrame()).startsWith("CONNECTED");
 
         socket.send("SEND\ndestination:/queue/anything\n\nhello\0");
@@ -141,13 +131,8 @@ class RealtimeIntegrationTest extends IntegrationTest {
         assertThat(socket.nextFrame()).startsWith("ERROR").contains("message:FORBIDDEN");
     }
 
-    private Socket connect(String accessToken) throws Exception {
-        Socket socket = new Socket();
-        new StandardWebSocketClient().execute(socket, "ws://localhost:" + port + RealtimeConfig.ENDPOINT)
-                .get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        String authorization = accessToken == null ? "" : "Authorization:Bearer " + accessToken + "\n";
-        socket.send("CONNECT\naccept-version:1.2\nheart-beat:0,0\n" + authorization + "\n\0");
-        return socket;
+    private StompTestSocket connect(String accessToken) throws Exception {
+        return StompTestSocket.connect(port, accessToken);
     }
 
     private Tokens login() throws Exception {
@@ -166,39 +151,5 @@ class RealtimeIntegrationTest extends IntegrationTest {
     }
 
     private record Tokens(String accessToken, String refreshToken) {
-    }
-
-    private static final class Socket extends TextWebSocketHandler {
-
-        private final BlockingQueue<String> frames = new LinkedBlockingQueue<>();
-        private final CompletableFuture<WebSocketSession> session = new CompletableFuture<>();
-        private final CompletableFuture<CloseStatus> closed = new CompletableFuture<>();
-
-        @Override
-        public void afterConnectionEstablished(WebSocketSession established) {
-            session.complete(established);
-        }
-
-        @Override
-        protected void handleTextMessage(WebSocketSession ignored, TextMessage message) {
-            frames.add(message.getPayload());
-        }
-
-        @Override
-        public void afterConnectionClosed(WebSocketSession ignored, CloseStatus status) {
-            closed.complete(status);
-        }
-
-        void send(String frame) throws Exception {
-            session.get(TIMEOUT_SECONDS, TimeUnit.SECONDS).sendMessage(new TextMessage(frame));
-        }
-
-        String nextFrame() throws InterruptedException {
-            return frames.poll(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        }
-
-        CloseStatus closeStatus() throws Exception {
-            return closed.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        }
     }
 }

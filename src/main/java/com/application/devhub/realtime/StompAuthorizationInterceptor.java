@@ -11,11 +11,14 @@ import org.springframework.stereotype.Component;
 
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 @Component
 public class StompAuthorizationInterceptor implements ChannelInterceptor {
 
     private static final String USER_QUEUES = "/user/queue/";
+    private static final Pattern TYPING_DESTINATION =
+            Pattern.compile("^/app/conversations/[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}/typing$");
     private static final Set<StompCommand> UNAUTHENTICATED_COMMANDS =
             EnumSet.of(StompCommand.CONNECT, StompCommand.STOMP, StompCommand.DISCONNECT);
 
@@ -29,13 +32,17 @@ public class StompAuthorizationInterceptor implements ChannelInterceptor {
         if (accessor.getUser() == null) {
             throw StompRejection.of(ErrorCode.UNAUTHORIZED);
         }
-        if (accessor.getCommand() == StompCommand.SEND) {
+        if (accessor.getCommand() == StompCommand.SEND && !isTypingDestination(accessor.getDestination())) {
             throw StompRejection.of(ErrorCode.FORBIDDEN);
         }
         if (accessor.getCommand() == StompCommand.SUBSCRIBE && !isUserQueue(accessor.getDestination())) {
             throw StompRejection.of(ErrorCode.FORBIDDEN);
         }
         return message;
+    }
+
+    private static boolean isTypingDestination(String destination) {
+        return destination != null && TYPING_DESTINATION.matcher(destination).matches();
     }
 
     private static boolean isUserQueue(String destination) {

@@ -18,6 +18,7 @@ public class RealtimeConfig implements WebSocketMessageBrokerConfigurer {
     public static final String ENDPOINT = "/ws";
     private static final String QUEUE_PREFIX = "/queue";
     private static final String USER_PREFIX = "/user";
+    private static final String APPLICATION_PREFIX = "/app";
 
     private final RealtimeProperties properties;
     private final RealtimeSessionRegistry registry;
@@ -49,6 +50,7 @@ public class RealtimeConfig implements WebSocketMessageBrokerConfigurer {
                 .setHeartbeatValue(new long[]{heartbeat, heartbeat})
                 .setTaskScheduler(messageBrokerTaskScheduler);
         broker.setUserDestinationPrefix(USER_PREFIX);
+        broker.setApplicationDestinationPrefixes(APPLICATION_PREFIX);
     }
 
     @Override
