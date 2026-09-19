@@ -1,24 +1,22 @@
 package com.application.devhub.auth;
 
+import com.application.devhub.common.validation.DisplayName;
 import com.application.devhub.common.validation.Password;
+import com.application.devhub.common.validation.Username;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.util.Locale;
 
 public record SignupRequest(
         @Schema(description = "Public handle: letters, digits and underscores", example = "ada_dev")
-        @NotBlank
-        @Size(min = 3, max = 30)
-        @Pattern(regexp = "^[A-Za-z0-9_]+$", message = "may only contain letters, digits and underscores")
+        @Username
         String username,
 
         @Schema(example = "Ada Lovelace")
-        @NotBlank
-        @Size(max = 50)
+        @DisplayName
         String displayName,
 
         @Schema(example = "ada@devhub.dev")
