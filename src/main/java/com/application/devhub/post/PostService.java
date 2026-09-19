@@ -1,6 +1,8 @@
 package com.application.devhub.post;
 
 import com.application.devhub.common.api.ApiException;
+import com.application.devhub.notification.ActivityPublisher;
+import com.application.devhub.notification.NotificationWriter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,13 +15,21 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PostLikeRepository likeRepository;
+    private final ActivityPublisher activityPublisher;
+    private final NotificationWriter notificationWriter;
 
     @Transactional
     public UUID create(UUID authorId, CreatePostRequest request) {
         Post post = request.replyToId() == null
                 ? Post.original(authorId, request.content())
                 : Post.replyTo(livePost(request.replyToId()), authorId, request.content());
-        return postRepository.saveAndFlush(post).getId();
+        UUID id = postRepository.saveAndFlush(post).getId();
+        if (post.isReply()) {
+            activityPublisher.replied(authorId, id);
+        } else {
+            activityPublisher.posted(authorId, id);
+        }
+        return id;
     }
 
     @Transactional
@@ -29,17 +39,22 @@ public class PostService {
             throw ApiException.forbidden();
         }
         post.delete();
+        notificationWriter.withdrawSubject(postId);
     }
 
     @Transactional
     public void like(UUID userId, UUID postId) {
         livePost(postId);
-        likeRepository.like(postId, userId);
+        if (likeRepository.like(postId, userId) > 0) {
+            activityPublisher.likeChanged(userId, postId);
+        }
     }
 
     @Transactional
     public void unlike(UUID userId, UUID postId) {
-        likeRepository.unlike(postId, userId);
+        if (likeRepository.unlike(postId, userId) > 0) {
+            activityPublisher.likeChanged(userId, postId);
+        }
     }
 
     private Post livePost(UUID postId) {

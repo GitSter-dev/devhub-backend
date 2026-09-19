@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface FollowRepository extends JpaRepository<Follow, Follow.Key> {
@@ -14,11 +15,20 @@ public interface FollowRepository extends JpaRepository<Follow, Follow.Key> {
             INSERT INTO follows (follower_id, followee_id) VALUES (:followerId, :followeeId)
             ON CONFLICT (follower_id, followee_id) DO NOTHING
             """, nativeQuery = true)
-    void follow(@Param("followerId") UUID followerId, @Param("followeeId") UUID followeeId);
+    int follow(@Param("followerId") UUID followerId, @Param("followeeId") UUID followeeId);
 
     @Modifying
     @Query("delete from Follow f where f.key.followerId = :followerId and f.key.followeeId = :followeeId")
-    void unfollow(@Param("followerId") UUID followerId, @Param("followeeId") UUID followeeId);
+    int unfollow(@Param("followerId") UUID followerId, @Param("followeeId") UUID followeeId);
+
+    @Query(value = """
+            SELECT follower_id FROM follows
+            WHERE followee_id = :followeeId AND follower_id > :after
+            ORDER BY follower_id
+            LIMIT :limit
+            """, nativeQuery = true)
+    List<UUID> followerIdsAfter(@Param("followeeId") UUID followeeId, @Param("after") UUID after,
+                                @Param("limit") int limit);
 
     @Query("select count(f) from Follow f where f.key.followeeId = :userId")
     long countFollowers(@Param("userId") UUID userId);

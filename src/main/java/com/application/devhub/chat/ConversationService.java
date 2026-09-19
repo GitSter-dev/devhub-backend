@@ -3,6 +3,7 @@ package com.application.devhub.chat;
 import com.application.devhub.common.api.ApiException;
 import com.application.devhub.common.api.ErrorCode;
 import com.application.devhub.follow.FollowRepository;
+import com.application.devhub.notification.ActivityPublisher;
 import com.application.devhub.user.User;
 import com.application.devhub.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class ConversationService {
     private final MessageLog messageLog;
     private final ReceiptService receiptService;
     private final ApplicationEventPublisher events;
+    private final ActivityPublisher activityPublisher;
 
     @Transactional
     public Opened openDirect(UUID me, UUID otherId) {
@@ -119,6 +121,7 @@ public class ConversationService {
                 .filter(candidate -> candidate.getStatus() == MemberStatus.REQUEST || candidate.isActive())
                 .orElseThrow(ApiException::notFound);
         member.activate();
+        reconcileRequests(conversationId, me);
         announce(conversationId);
     }
 
@@ -128,6 +131,7 @@ public class ConversationService {
                 .filter(candidate -> candidate.getStatus() == MemberStatus.REQUEST)
                 .orElseThrow(ApiException::notFound)
                 .decline();
+        reconcileRequests(conversationId, me);
         announce(conversationId);
     }
 
@@ -190,6 +194,13 @@ public class ConversationService {
         Set<UUID> distinct = new LinkedHashSet<>(userIds);
         distinct.remove(excluded);
         return distinct;
+    }
+
+    private void reconcileRequests(UUID conversationId, UUID recipient) {
+        memberRepository.findAllMembers(conversationId).stream()
+                .map(ConversationMember::userId)
+                .filter(userId -> !userId.equals(recipient))
+                .forEach(requester -> activityPublisher.requestChanged(requester, conversationId));
     }
 
     private void announce(UUID conversationId) {

@@ -5,5 +5,6 @@ public enum OutboxEventType {
     PASSWORD_RESET,
     PASSWORD_CHANGED,
     PUSH_TEST,
-    CHAT_MESSAGE
+    CHAT_MESSAGE,
+    NOTIFICATION
 }

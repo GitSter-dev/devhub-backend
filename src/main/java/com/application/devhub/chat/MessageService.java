@@ -2,6 +2,7 @@ package com.application.devhub.chat;
 
 import com.application.devhub.common.api.ApiException;
 import com.application.devhub.common.api.ErrorCode;
+import com.application.devhub.notification.ActivityPublisher;
 import com.application.devhub.outbox.OutboxEventType;
 import com.application.devhub.outbox.OutboxPublisher;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class MessageService {
     private final ReceiptService receiptService;
     private final ApplicationEventPublisher events;
     private final OutboxPublisher outboxPublisher;
+    private final ActivityPublisher activityPublisher;
 
     @Transactional
     public UUID send(UUID senderId, UUID conversationId, SendMessageRequest request) {
@@ -48,7 +50,15 @@ public class MessageService {
         events.publishEvent(new ChatEvents.MessageCreated(conversationId, message.getId()));
         outboxPublisher.publish(OutboxEventType.CHAT_MESSAGE,
                 new ChatPushHandler.ChatMessagePayload(conversationId, message.getId()));
+        if (message.getSeq() == 1 && hasPendingRequest(conversationId)) {
+            activityPublisher.requestChanged(senderId, conversationId);
+        }
         return message.getId();
+    }
+
+    private boolean hasPendingRequest(UUID conversationId) {
+        return memberRepository.findAllMembers(conversationId).stream()
+                .anyMatch(member -> member.getStatus() == MemberStatus.REQUEST);
     }
 
     @Transactional

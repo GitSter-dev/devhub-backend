@@ -14,9 +14,9 @@ public interface PostLikeRepository extends JpaRepository<PostLike, PostLike.Key
             INSERT INTO post_likes (post_id, user_id) VALUES (:postId, :userId)
             ON CONFLICT (post_id, user_id) DO NOTHING
             """, nativeQuery = true)
-    void like(@Param("postId") UUID postId, @Param("userId") UUID userId);
+    int like(@Param("postId") UUID postId, @Param("userId") UUID userId);
 
     @Modifying
     @Query("delete from PostLike l where l.key.postId = :postId and l.key.userId = :userId")
-    void unlike(@Param("postId") UUID postId, @Param("userId") UUID userId);
+    int unlike(@Param("postId") UUID postId, @Param("userId") UUID userId);
 }

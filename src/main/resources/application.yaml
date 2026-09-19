@@ -74,6 +74,16 @@ devhub:
       posting: { capacity: 30, period: 10m }
       like: { capacity: 300, period: 10m }
       messaging: { capacity: 60, period: 1m }
+  notifications:
+    push-poll-interval: ${NOTIFICATION_PUSH_POLL_INTERVAL:2s}
+    push-batch-size: ${NOTIFICATION_PUSH_BATCH_SIZE:50}
+    burst-window: ${NOTIFICATION_BURST_WINDOW:5s}
+    individual-pushes: ${NOTIFICATION_INDIVIDUAL_PUSHES:3}
+    digest-interval: ${NOTIFICATION_DIGEST_INTERVAL:15m}
+    posts-digest-interval: ${NOTIFICATION_POSTS_DIGEST_INTERVAL:1h}
+    fan-out-chunk: ${NOTIFICATION_FAN_OUT_CHUNK:1000}
+    page-size: ${NOTIFICATION_PAGE_SIZE:20}
+    retention: ${NOTIFICATION_RETENTION:90d}
   session:
     refresh-token-ttl: ${REFRESH_TOKEN_TTL:30d}
     refresh-replay-window: ${REFRESH_REPLAY_WINDOW:60s}
