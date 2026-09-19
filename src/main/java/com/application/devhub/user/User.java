@@ -37,6 +37,9 @@ public class User extends BaseEntity {
     @Column(name = "email_verified_at")
     private Instant emailVerifiedAt;
 
+    @Column(name = "setup_completed_at")
+    private Instant setupCompletedAt;
+
     public User(String username, String displayName, String email, String passwordHash) {
         this.username = username;
         this.displayName = displayName;
@@ -55,5 +58,15 @@ public class User extends BaseEntity {
 
     public void markEmailVerified() {
         this.emailVerifiedAt = Instant.now();
+    }
+
+    public boolean isSetupCompleted() {
+        return setupCompletedAt != null;
+    }
+
+    public void completeSetup() {
+        if (setupCompletedAt == null) {
+            this.setupCompletedAt = Instant.now();
+        }
     }
 }

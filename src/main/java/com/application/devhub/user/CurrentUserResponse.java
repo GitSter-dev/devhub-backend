@@ -10,10 +10,11 @@ public record CurrentUserResponse(
         String email,
         Role role,
         boolean emailVerified,
+        boolean setupCompleted,
         Instant createdAt) {
 
     public static CurrentUserResponse from(User user) {
         return new CurrentUserResponse(user.getId(), user.getUsername(), user.getDisplayName(), user.getEmail(),
-                user.getRole(), user.isEmailVerified(), user.getCreatedAt());
+                user.getRole(), user.isEmailVerified(), user.isSetupCompleted(), user.getCreatedAt());
     }
 }

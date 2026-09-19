@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import static com.application.devhub.common.api.ErrorCode.NOT_FOUND;
+import static com.application.devhub.common.api.ErrorCode.TOPICS_REQUIRED;
 
 @Tag(name = "Users", description = "The signed-in user and, later, other developers' profiles")
 public interface UserApi {
@@ -19,4 +20,11 @@ public interface UserApi {
     @ApiResponse(responseCode = "200", description = "The signed-in user", useReturnTypeSchema = true)
     @ApiErrors(NOT_FOUND)
     ApiEnvelope<CurrentUserResponse> me(@Parameter(hidden = true) JwtAuthenticationToken authentication);
+
+    @Operation(summary = "Finish account setup",
+            description = "Marks the post-signup setup as done so the app stops showing it on any device. "
+                    + "TOPICS_REQUIRED until the user has picked at least one topic. Safe to repeat.")
+    @ApiResponse(responseCode = "200", description = "The user, with setupCompleted true", useReturnTypeSchema = true)
+    @ApiErrors({NOT_FOUND, TOPICS_REQUIRED})
+    ApiEnvelope<CurrentUserResponse> completeSetup(@Parameter(hidden = true) JwtAuthenticationToken authentication);
 }
