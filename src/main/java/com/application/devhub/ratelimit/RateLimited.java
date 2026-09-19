@@ -12,4 +12,6 @@ import java.lang.annotation.Target;
 public @interface RateLimited {
 
     RateLimitPolicy value();
+
+    RateLimitScope scope() default RateLimitScope.CLIENT_IP;
 }

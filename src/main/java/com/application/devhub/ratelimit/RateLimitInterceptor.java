@@ -7,6 +7,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import java.security.Principal;
+
 @Component
 @RequiredArgsConstructor
 public class RateLimitInterceptor implements HandlerInterceptor {
@@ -18,9 +20,14 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         if (handler instanceof HandlerMethod method) {
             RateLimited rateLimited = method.getMethodAnnotation(RateLimited.class);
             if (rateLimited != null) {
-                rateLimiter.consume(rateLimited.value(), request.getRemoteAddr());
+                rateLimiter.consume(rateLimited.value(), keyOf(rateLimited.scope(), request));
             }
         }
         return true;
+    }
+
+    private static String keyOf(RateLimitScope scope, HttpServletRequest request) {
+        Principal user = request.getUserPrincipal();
+        return scope == RateLimitScope.USER && user != null ? "user:" + user.getName() : request.getRemoteAddr();
     }
 }

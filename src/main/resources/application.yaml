@@ -69,6 +69,7 @@ devhub:
       resend-verification: { capacity: 5, period: 10m }
       forgot-password: { capacity: 5, period: 10m }
       test-notification: { capacity: 3, period: 10m }
+      follow: { capacity: 100, period: 10m }
   session:
     refresh-token-ttl: ${REFRESH_TOKEN_TTL:30d}
     refresh-replay-window: ${REFRESH_REPLAY_WINDOW:60s}

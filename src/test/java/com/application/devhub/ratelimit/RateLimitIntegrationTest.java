@@ -1,6 +1,7 @@
 package com.application.devhub.ratelimit;
 
 import com.application.devhub.IntegrationTest;
+import com.application.devhub.TestUsers;
 import com.application.devhub.user.User;
 import com.application.devhub.user.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -14,9 +15,12 @@ import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.util.UUID;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -28,7 +32,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "devhub.rate-limit.limits.login-failures.capacity=3",
         "devhub.rate-limit.limits.login-failures.period=1h",
         "devhub.rate-limit.limits.verify-email.capacity=3",
-        "devhub.rate-limit.limits.verify-email.period=1h"
+        "devhub.rate-limit.limits.verify-email.period=1h",
+        "devhub.rate-limit.limits.follow.capacity=3",
+        "devhub.rate-limit.limits.follow.period=1h"
 })
 class RateLimitIntegrationTest extends IntegrationTest {
 
@@ -45,6 +51,36 @@ class RateLimitIntegrationTest extends IntegrationTest {
 
     @Autowired
     private JsonMapper jsonMapper;
+
+    @Autowired
+    private TestUsers users;
+
+    @Test
+    void theFollowLimitIsPerAccountSoSharedNetworksDontCollide() throws Exception {
+        UUID target = users.verified("follow_target");
+        users.verified("follower_one");
+        users.verified("follower_two");
+        String one = users.bearer("follower_one");
+        String two = users.bearer("follower_two");
+
+        for (int i = 0; i < 3; i++) {
+            follow("10.0.9.1", one, target).andExpect(status().isOk());
+        }
+
+        follow("10.0.9.1", one, target)
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string(HttpHeaders.RETRY_AFTER, not("0")));
+        follow("10.0.9.1", two, target).andExpect(status().isOk());
+    }
+
+    private ResultActions follow(String ip, String bearer, UUID target) throws Exception {
+        return mockMvc.perform(put("/users/me/following/{userId}", target)
+                .with(request -> {
+                    request.setRemoteAddr(ip);
+                    return request;
+                })
+                .header(HttpHeaders.AUTHORIZATION, bearer));
+    }
 
     @Test
     void clientOverTheIpLimitGets429WithRetryAfter() throws Exception {
