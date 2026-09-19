@@ -1,21 +1,16 @@
 package com.application.devhub.profile;
 
-import com.application.devhub.common.api.ApiException;
+import com.application.devhub.common.pagination.KeysetCursor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.format.DateTimeParseException;
-import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 @Component
 @RequiredArgsConstructor
@@ -48,11 +43,11 @@ public class FollowListQuery {
     }
 
     private PersonPage page(String sql, UUID viewerId, UUID targetId, String cursor) {
-        Cursor position = Cursor.decode(cursor);
+        KeysetCursor position = KeysetCursor.decode(cursor);
         List<Row> rows = jdbcClient.sql(sql)
                 .param("viewer", viewerId)
                 .param("target", targetId)
-                .param("cursorAt", position == null ? null : Timestamp.from(position.at()))
+                .param("cursorAt", position == null ? null : position.timestamp())
                 .param("cursorId", position == null ? null : position.id())
                 .param("limit", PAGE_SIZE + 1)
                 .query((row, index) -> Row.of(row))
@@ -61,7 +56,7 @@ public class FollowListQuery {
         List<Row> visible = more ? rows.subList(0, PAGE_SIZE) : rows;
         Row last = visible.isEmpty() ? null : visible.getLast();
         return new PersonPage(visible.stream().map(Row::person).toList(),
-                more ? new Cursor(last.followedAt(), last.person().id()).encode() : null);
+                more ? new KeysetCursor(last.followedAt(), last.person().id()).encode() : null);
     }
 
     private record Row(PersonSummary person, Instant followedAt) {
@@ -70,29 +65,6 @@ public class FollowListQuery {
             return new Row(new PersonSummary(row.getObject("id", UUID.class), row.getString("username"),
                     row.getString("display_name"), row.getBoolean("following")),
                     row.getTimestamp("created_at").toInstant());
-        }
-    }
-
-    private record Cursor(Instant at, UUID id) {
-
-        private static final String SEPARATOR = "|";
-
-        String encode() {
-            return Base64.getUrlEncoder().withoutPadding()
-                    .encodeToString((at + SEPARATOR + id).getBytes(StandardCharsets.UTF_8));
-        }
-
-        static Cursor decode(String cursor) {
-            if (cursor == null || cursor.isBlank()) {
-                return null;
-            }
-            try {
-                String[] parts = new String(Base64.getUrlDecoder().decode(cursor), StandardCharsets.UTF_8)
-                        .split(Pattern.quote(SEPARATOR), 2);
-                return new Cursor(Instant.parse(parts[0]), UUID.fromString(parts[1]));
-            } catch (IllegalArgumentException | DateTimeParseException | ArrayIndexOutOfBoundsException e) {
-                throw ApiException.badRequest();
-            }
         }
     }
 }
