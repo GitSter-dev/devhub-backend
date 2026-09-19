@@ -19,4 +19,13 @@ public interface FollowRepository extends JpaRepository<Follow, Follow.Key> {
     @Modifying
     @Query("delete from Follow f where f.key.followerId = :followerId and f.key.followeeId = :followeeId")
     void unfollow(@Param("followerId") UUID followerId, @Param("followeeId") UUID followeeId);
+
+    @Query("select count(f) from Follow f where f.key.followeeId = :userId")
+    long countFollowers(@Param("userId") UUID userId);
+
+    @Query("select count(f) from Follow f where f.key.followerId = :userId")
+    long countFollowing(@Param("userId") UUID userId);
+
+    @Query("select count(f) > 0 from Follow f where f.key.followerId = :followerId and f.key.followeeId = :followeeId")
+    boolean isFollowing(@Param("followerId") UUID followerId, @Param("followeeId") UUID followeeId);
 }
