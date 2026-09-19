@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:fragment="layout(preheader, content)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="supported-color-schemes" content="dark">
+    <title>DevHub</title>
+    <style th:utext="${styles}"></style>
+</head>
+<body class="body">
+<div class="preheader" th:replace="${preheader}"></div>
+<table role="presentation" class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+        <td align="center" class="wrapper-cell">
+            <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td class="brand">
+                        <span class="brand-bracket">&lt;</span><span class="brand-name">dev</span><span class="brand-slash">/</span><span class="brand-name">hub</span><span class="brand-bracket">&gt;</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="window">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td class="window-bar">
+                                    <span class="dot dot-red"></span><span class="dot dot-amber"></span><span class="dot dot-green"></span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="window-body" th:insert="${content}"></td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="footer">
+                        <p class="footer-line">DevHub &middot; where developers connect</p>
+                        <p class="footer-line footer-muted">This is an automated message. Replies to this address are not monitored.</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
