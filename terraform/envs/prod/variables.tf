@@ -36,3 +36,8 @@ variable "github_repo_id" {
   type    = string
   default = ""
 }
+
+variable "ses_identity" {
+  type    = string
+  default = ""
+}

@@ -100,3 +100,9 @@ variable "github_repo_id" {
   type        = string
   default     = ""
 }
+
+variable "ses_identity" {
+  description = "Email address or domain verified with SES and used as the sender. Empty skips identity creation."
+  type        = string
+  default     = ""
+}

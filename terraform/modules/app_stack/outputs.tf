@@ -26,3 +26,7 @@ output "backup_bucket" {
 output "data_volume_id" {
   value = aws_ebs_volume.data.id
 }
+
+output "smtp_user" {
+  value = aws_iam_user.smtp.name
+}

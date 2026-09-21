@@ -11,4 +11,5 @@ module "app" {
   github_owner_id   = var.github_owner_id
   github_repo_id    = var.github_repo_id
   parameter_path    = "/devhub/prod"
+  ses_identity      = var.ses_identity
 }

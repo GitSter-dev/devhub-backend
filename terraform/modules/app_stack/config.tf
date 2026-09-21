@@ -27,8 +27,10 @@ locals {
     REALTIME_ALLOWED_ORIGINS = "https://${local.domain}"
 
     MAIL_HOST = "email-smtp.${var.region}.amazonaws.com"
-    MAIL_PORT = "587"
-    MAIL_FROM = var.mail_from
+    MAIL_PORT         = "587"
+    MAIL_SMTP_AUTH    = "true"
+    MAIL_SMTP_STARTTLS = "true"
+    MAIL_FROM = var.ses_identity != "" ? "DevHub <${var.ses_identity}>" : var.mail_from
 
     JWT_ISSUER               = "devhub"
     JWT_PUBLIC_KEY_LOCATION  = "file:/run/secrets/public.pem"
