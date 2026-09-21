@@ -1,0 +1,23 @@
+{
+	email {$ACME_EMAIL}
+}
+
+{$DEVHUB_DOMAIN} {
+	encode zstd gzip
+
+	@actuator path /actuator /actuator/*
+	respond @actuator 404
+
+	reverse_proxy app:8080 {
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Real-IP {remote_host}
+
+		lb_try_duration 30s
+		lb_try_interval 500ms
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

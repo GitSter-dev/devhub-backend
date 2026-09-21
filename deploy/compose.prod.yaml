@@ -1,0 +1,65 @@
+name: devhub
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:?DB_NAME is not set}
+      POSTGRES_USER: ${DB_USER:?DB_USER is not set}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is not set}
+    command:
+      - postgres
+      - -c=shared_buffers=512MB
+      - -c=effective_cache_size=1GB
+      - -c=work_mem=8MB
+      - -c=maintenance_work_mem=128MB
+      - -c=max_connections=50
+    volumes:
+      - /data/postgres:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    mem_limit: 1g
+
+  app:
+    image: ${ECR_REGISTRY}/devhub-backend:${IMAGE_TAG:?IMAGE_TAG is not set}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - /opt/devhub/app.env
+    volumes:
+      - /opt/devhub/secrets:/run/secrets:ro
+    ports:
+      - "127.0.0.1:8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "--max-time", "4", "http://127.0.0.1:8080/actuator/health/readiness"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 90s
+    mem_limit: 2g
+    read_only: true
+    tmpfs:
+      - /tmp
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    env_file:
+      - /opt/devhub/app.env
+    volumes:
+      - /opt/devhub/Caddyfile:/etc/caddy/Caddyfile:ro
+      - /data/caddy:/data
+      - /data/caddy-config:/config
+    mem_limit: 256m

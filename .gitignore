@@ -40,3 +40,11 @@ src/main/resources/keys/
 .claude/
 .agents/
 graphify-out/
+
+### Terraform ###
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
