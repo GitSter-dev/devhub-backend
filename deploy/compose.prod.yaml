@@ -10,11 +10,16 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is not set}
     command:
       - postgres
-      - -c=shared_buffers=512MB
-      - -c=effective_cache_size=1GB
-      - -c=work_mem=8MB
-      - -c=maintenance_work_mem=128MB
-      - -c=max_connections=50
+      - -c
+      - shared_buffers=512MB
+      - -c
+      - effective_cache_size=1GB
+      - -c
+      - work_mem=8MB
+      - -c
+      - maintenance_work_mem=128MB
+      - -c
+      - max_connections=50
     volumes:
       - /data/postgres:/var/lib/postgresql
     healthcheck:
