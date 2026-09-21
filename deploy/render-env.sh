@@ -45,8 +45,12 @@ jq -r --arg p "$PARAM_PATH/" '
 	| "\(.n | ltrimstr($p))=\(.v)"
 ' "$TMP" >"$DIR/app.env"
 
-chmod 0640 "$SECRETS"/*
+# The app container runs as uid/gid 10001. The directory needs group search
+# permission too, not just the files, or every read is a permission error.
+chown root:10001 "$SECRETS"
+chmod 0750 "$SECRETS"
 chown root:10001 "$SECRETS"/*
+chmod 0640 "$SECRETS"/*
 chmod 0600 "$DIR/app.env"
 
 echo "rendered $count parameters from $PARAM_PATH"
