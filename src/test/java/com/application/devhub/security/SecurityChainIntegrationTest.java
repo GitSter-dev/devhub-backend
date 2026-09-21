@@ -103,6 +103,31 @@ class SecurityChainIntegrationTest extends IntegrationTest {
     }
 
     @Test
+    void healthEndpointIsPublic() throws Exception {
+        mockMvc.perform(get("/actuator/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"));
+    }
+
+    @Test
+    void healthProbesArePublic() throws Exception {
+        mockMvc.perform(get("/actuator/health/readiness")).andExpect(status().isOk());
+        mockMvc.perform(get("/actuator/health/liveness")).andExpect(status().isOk());
+    }
+
+    @Test
+    void healthDetailsAreNotDisclosed() throws Exception {
+        mockMvc.perform(get("/actuator/health"))
+                .andExpect(jsonPath("$.components").doesNotExist());
+    }
+
+    @Test
+    void otherActuatorEndpointsAreNotExposed() throws Exception {
+        mockMvc.perform(get("/actuator/env")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/actuator/beans")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void authPathsIgnoreStaleBearerToken() throws Exception {
         Instant past = Instant.now().minus(Duration.ofHours(1));
         String expired = sign(jwtEncoder, claims(jwtProperties.issuer(), past, past.plus(Duration.ofMinutes(5))));

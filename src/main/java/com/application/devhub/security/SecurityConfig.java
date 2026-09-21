@@ -28,6 +28,8 @@ public class SecurityConfig {
     private static final String[] PUBLIC_PATHS = {
             AUTH_PATHS,
             RealtimeConfig.ENDPOINT,
+            "/actuator/health",
+            "/actuator/health/**",
             "/error",
             "/v3/api-docs/**",
             "/swagger-ui/**",
