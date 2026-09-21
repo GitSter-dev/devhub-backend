@@ -98,6 +98,11 @@ data "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
 }
 
+locals {
+  repo_owner = split("/", var.github_repo)[0]
+  repo_name  = split("/", var.github_repo)[1]
+}
+
 data "aws_iam_policy_document" "github_assume_role" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
@@ -115,10 +120,18 @@ data "aws_iam_policy_document" "github_assume_role" {
 
     # Scoped to the GitHub Environment rather than a branch ref: a pull request
     # workflow can never mint this subject.
+    #
+    # Two forms are accepted because this account issues GitHub's ID-qualified
+    # immutable subject as well as the plain one. Omitting either is an
+    # intermittent "Not authorized to perform sts:AssumeRoleWithWebIdentity".
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:environment:${var.github_environment}"]
+      values = compact([
+        "repo:${var.github_repo}:environment:${var.github_environment}",
+        var.github_owner_id != "" && var.github_repo_id != "" ?
+        "repo:${local.repo_owner}@${var.github_owner_id}/${local.repo_name}@${var.github_repo_id}:environment:${var.github_environment}" : "",
+      ])
     }
   }
 }

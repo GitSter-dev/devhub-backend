@@ -8,5 +8,7 @@ module "app" {
   custom_domain     = var.custom_domain
   acme_email        = var.acme_email
   github_repo       = var.github_repo
+  github_owner_id   = var.github_owner_id
+  github_repo_id    = var.github_repo_id
   parameter_path    = "/devhub/prod"
 }

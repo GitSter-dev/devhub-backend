@@ -6,10 +6,10 @@
 
 locals {
   config = {
-    DB_HOST      = "postgres"
-    DB_PORT      = "5432"
-    DB_NAME      = var.db_name
-    DB_USER      = var.db_user
+    DB_HOST            = "postgres"
+    DB_PORT            = "5432"
+    DB_NAME            = var.db_name
+    DB_USER            = var.db_user
     ECR_REPOSITORY_URL = aws_ecr_repository.backend.repository_url
 
     DEVHUB_DOMAIN = local.domain

@@ -88,3 +88,15 @@ variable "snapshot_retention_count" {
   type        = number
   default     = 7
 }
+
+variable "github_owner_id" {
+  description = "Numeric GitHub account id, used for the ID-qualified OIDC subject. Empty trusts only the plain subject."
+  type        = string
+  default     = ""
+}
+
+variable "github_repo_id" {
+  description = "Numeric GitHub repository id, used for the ID-qualified OIDC subject."
+  type        = string
+  default     = ""
+}

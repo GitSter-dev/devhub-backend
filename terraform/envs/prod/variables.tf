@@ -26,3 +26,13 @@ variable "acme_email" {
 variable "github_repo" {
   type = string
 }
+
+variable "github_owner_id" {
+  type    = string
+  default = ""
+}
+
+variable "github_repo_id" {
+  type    = string
+  default = ""
+}
