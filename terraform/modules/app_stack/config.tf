@@ -10,7 +10,7 @@ locals {
     DB_PORT      = "5432"
     DB_NAME      = var.db_name
     DB_USER      = var.db_user
-    ECR_REGISTRY = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com"
+    ECR_REPOSITORY_URL = aws_ecr_repository.backend.repository_url
 
     DEVHUB_DOMAIN = local.domain
     ACME_EMAIL    = var.acme_email

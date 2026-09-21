@@ -1,6 +1,6 @@
 region            = "eu-north-1"
 availability_zone = "eu-north-1a"
-instance_type     = "t3.medium"
+instance_type     = "c7i-flex.large"
 custom_domain     = ""
 acme_email        = "bousleimengeorgio139@gmail.com"
 github_repo       = "GitSter-dev/devhub-backend"

@@ -10,7 +10,7 @@ variable "availability_zone" {
 
 variable "instance_type" {
   type    = string
-  default = "t3.medium"
+  default = "c7i-flex.large"
 }
 
 variable "custom_domain" {

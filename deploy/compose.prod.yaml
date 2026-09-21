@@ -25,7 +25,7 @@ services:
     mem_limit: 1g
 
   app:
-    image: ${ECR_REGISTRY}/devhub-backend:${IMAGE_TAG:?IMAGE_TAG is not set}
+    image: ${ECR_REPOSITORY_URL:?ECR_REPOSITORY_URL is not set}:${IMAGE_TAG:?IMAGE_TAG is not set}
     restart: unless-stopped
     depends_on:
       postgres:

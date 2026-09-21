@@ -26,8 +26,12 @@ resource "aws_instance" "app" {
   vpc_security_group_ids = [aws_security_group.app.id]
   iam_instance_profile   = aws_iam_instance_profile.instance.name
 
-  credit_specification {
-    cpu_credits = var.cpu_credits
+  # Only the T family exposes burst credits; the flex families manage their own.
+  dynamic "credit_specification" {
+    for_each = startswith(var.instance_type, "t") ? [1] : []
+    content {
+      cpu_credits = var.cpu_credits
+    }
   }
 
   metadata_options {

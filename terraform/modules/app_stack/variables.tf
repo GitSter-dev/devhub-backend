@@ -15,11 +15,11 @@ variable "availability_zone" {
 
 variable "instance_type" {
   type    = string
-  default = "t3.medium"
+  default = "c7i-flex.large"
 }
 
 variable "cpu_credits" {
-  description = "standard keeps burst spend predictable; unlimited trades cost for throughput."
+  description = "Burst credit mode. Only applied to T-family instance types."
   type        = string
   default     = "standard"
 }

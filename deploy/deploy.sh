@@ -12,7 +12,7 @@ echo "==> refreshing secrets"
 ./render-env.sh
 
 echo "==> logging in to ECR"
-registry=$(grep '^ECR_REGISTRY=' app.env | cut -d= -f2-)
+registry=$(grep '^ECR_REPOSITORY_URL=' app.env | cut -d= -f2- | cut -d/ -f1)
 aws ecr get-login-password --region "$REGION" |
 	docker login --username AWS --password-stdin "$registry" >/dev/null
 
