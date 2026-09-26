@@ -3,10 +3,16 @@
 Two independent layers exist. Prefer the logical dump; fall back to the volume
 snapshot only if S3 is unavailable or the dump is corrupt.
 
+`BACKUP_BUCKET` below is the stack's `backup_bucket` output:
+
+```bash
+BACKUP_BUCKET=$(terraform -chdir=terraform/envs/prod output -raw backup_bucket)
+```
+
 ## Layer 1 — nightly logical dump (preferred)
 
 `backup.sh` runs at 02:30 UTC, writes `pg_dump --format=custom` to
-`/data/backups`, uploads to `s3://devhub-prod-backups-163570183808/postgres/`
+`/data/backups`, uploads to `s3://$BACKUP_BUCKET/postgres/`
 and prunes local copies older than 7 days. S3 keeps objects for 30 days.
 
 Ordering is deliberate: the dump at 02:30 and the EBS snapshot at 02:45 both
@@ -16,8 +22,8 @@ accounts and delete rows. A backup taken after those jobs cannot undo them.
 ### Drill it (verified 2026-09-21)
 
 ```bash
-DUMP=$(aws s3 ls s3://devhub-prod-backups-163570183808/postgres/ --region eu-north-1 | awk '{print $4}' | tail -1)
-aws s3 cp "s3://devhub-prod-backups-163570183808/postgres/$DUMP" /tmp/ --region eu-north-1
+DUMP=$(aws s3 ls s3://$BACKUP_BUCKET/postgres/ --region eu-north-1 | awk '{print $4}' | tail -1)
+aws s3 cp "s3://$BACKUP_BUCKET/postgres/$DUMP" /tmp/ --region eu-north-1
 
 docker run -d --name restoredrill -e POSTGRES_PASSWORD=x -e POSTGRES_USER=devhub -e POSTGRES_DB=devhub postgres:18-alpine
 docker cp "/tmp/$DUMP" restoredrill:/tmp/d.dump
@@ -34,7 +40,7 @@ docker rm -f restoredrill
 aws ssm start-session --target <instance-id> --region eu-north-1
 cd /opt/devhub
 docker compose -f compose.prod.yaml --env-file app.env --env-file image.env stop app
-aws s3 cp s3://devhub-prod-backups-163570183808/postgres/<dump> /data/backups/
+aws s3 cp s3://$BACKUP_BUCKET/postgres/<dump> /data/backups/
 docker compose -f compose.prod.yaml --env-file app.env --env-file image.env \
   exec -T postgres pg_restore -U devhub -d devhub --clean --if-exists < /data/backups/<dump>
 docker compose -f compose.prod.yaml --env-file app.env --env-file image.env start app
