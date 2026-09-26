@@ -1,7 +1,6 @@
 package com.application.devhub.moderation;
 
 import com.application.devhub.common.api.ApiException;
-import com.application.devhub.common.pagination.KeysetCursor;
 import com.application.devhub.moderation.ModerationViews.ActionView;
 import com.application.devhub.moderation.ModerationViews.CaseDetail;
 import com.application.devhub.moderation.ModerationViews.CasePage;
@@ -34,22 +33,35 @@ public class ModerationQueries {
 
     @Transactional(readOnly = true)
     public CasePage cases(CaseStatus status, String cursor) {
-        KeysetCursor position = KeysetCursor.decode(cursor);
+        CaseCursor position = CaseCursor.decode(cursor);
         String keyset = position == null ? ""
-                : " AND (c.last_reported_at, c.id) < (CAST(:cursorAt AS timestamptz), CAST(:cursorId AS uuid))";
+                : " AND (c.severity, c.reporter_count, c.last_reported_at, c.id)"
+                + " < (:cursorSeverity, :cursorReporters, CAST(:cursorAt AS timestamptz), CAST(:cursorId AS uuid))";
         var query = jdbcClient.sql(CASES + " WHERE c.status = :status" + keyset
                         + " ORDER BY c.severity DESC, c.reporter_count DESC, c.last_reported_at DESC, c.id DESC"
                         + " LIMIT :limit")
                 .param("status", status.name())
                 .param("limit", properties.casePageSize() + 1);
         if (position != null) {
-            query = query.param("cursorAt", position.timestamp()).param("cursorId", position.id());
+            query = query.param("cursorSeverity", position.severity())
+                    .param("cursorReporters", position.reporterCount())
+                    .param("cursorAt", position.lastReportedTimestamp())
+                    .param("cursorId", position.id());
         }
         List<CaseView> rows = query.query((row, index) -> toCase(row)).list();
         boolean more = rows.size() > properties.casePageSize();
         List<CaseView> page = more ? rows.subList(0, properties.casePageSize()) : rows;
-        return new CasePage(page, more
-                ? new KeysetCursor(page.getLast().lastReportedAt(), page.getLast().id()).encode() : null);
+        return new CasePage(page, more ? CaseCursor.after(page.getLast()).encode() : null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CaseView> casesOwnedBy(UUID ownerId, int limit) {
+        return jdbcClient.sql(CASES + " WHERE c.owner_id = :ownerId ORDER BY c.last_reported_at DESC, c.id DESC"
+                        + " LIMIT :limit")
+                .param("ownerId", ownerId)
+                .param("limit", limit)
+                .query((row, index) -> toCase(row))
+                .list();
     }
 
     @Transactional(readOnly = true)

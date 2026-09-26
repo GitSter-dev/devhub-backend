@@ -25,6 +25,14 @@ public final class ModerationViews {
                              Instant createdAt) {
     }
 
+    public record AuditEntry(UUID id, UUID caseId, String moderatorUsername, ModerationActionType action,
+                             UUID targetUserId, String targetUsername, String note, Instant actsUntil,
+                             Instant createdAt) {
+    }
+
+    public record AuditPage(List<AuditEntry> items, String nextCursor) {
+    }
+
     public record CaseDetail(CaseView moderationCase, List<ReportView> reports, List<ActionView> actions) {
     }
 }
