@@ -1,15 +1,18 @@
 package com.application.devhub.push;
 
+import com.application.devhub.common.metrics.DevHubMetrics;
 import com.application.devhub.device.Device;
 import com.application.devhub.device.DeviceRegistration;
 import com.application.devhub.device.DeviceRegistry;
 import com.application.devhub.device.Platform;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,7 +30,8 @@ class PushDispatcherTest {
 
     private final DeviceRegistry registry = mock(DeviceRegistry.class);
     private final PushSender sender = mock(PushSender.class);
-    private final PushDispatcher dispatcher = new PushDispatcher(registry, sender);
+    private final SimpleMeterRegistry meters = new SimpleMeterRegistry();
+    private final PushDispatcher dispatcher = new PushDispatcher(registry, sender, new DevHubMetrics(meters));
 
     @Test
     void sendsTheMessageToEveryActiveDeviceOfTheUser() {
@@ -53,6 +57,8 @@ class PushDispatcherTest {
 
         verify(registry).revokeInvalidToken("token-dead");
         verify(registry, never()).revokeInvalidToken("token-ok");
+        assertThat(meters.get("devhub.push.deliveries").tag("outcome", "delivered").counter().count()).isEqualTo(1);
+        assertThat(meters.get("devhub.push.deliveries").tag("outcome", "token_invalid").counter().count()).isEqualTo(1);
     }
 
     @Test
