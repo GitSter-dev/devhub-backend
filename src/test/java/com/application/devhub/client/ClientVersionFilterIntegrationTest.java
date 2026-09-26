@@ -1,6 +1,7 @@
 package com.application.devhub.client;
 
 import com.application.devhub.IntegrationTest;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -8,6 +9,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -19,6 +21,9 @@ class ClientVersionFilterIntegrationTest extends IntegrationTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private MeterRegistry meters;
+
     @Test
     void anOutdatedAppIsToldToUpdateBeforeAuthenticationRuns() throws Exception {
         mockMvc.perform(login().header("X-App-Platform", "android").header("X-App-Version", "1.1.9"))
@@ -29,6 +34,9 @@ class ClientVersionFilterIntegrationTest extends IntegrationTest {
 
         mockMvc.perform(get("/users/me").header("X-App-Platform", "android").header("X-App-Version", "1.0.0"))
                 .andExpect(status().isUpgradeRequired());
+
+        assertThat(meters.get("devhub.clients.outdated.rejections")
+                .tags("platform", "android", "version", "1.1.9").counter().count()).isEqualTo(1);
     }
 
     @Test

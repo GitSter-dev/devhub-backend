@@ -1,5 +1,6 @@
 package com.application.devhub.realtime;
 
+import com.application.devhub.common.metrics.DevHubMetrics;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -16,6 +17,10 @@ import java.util.function.Predicate;
 public class RealtimeSessionRegistry {
 
     private final Map<String, Connection> connections = new ConcurrentHashMap<>();
+
+    public RealtimeSessionRegistry(DevHubMetrics metrics) {
+        metrics.realtimeConnections(connections::size);
+    }
 
     void opened(WebSocketSession socket) {
         connections.put(socket.getId(), Connection.anonymous(socket));

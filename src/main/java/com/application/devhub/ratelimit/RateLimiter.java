@@ -1,5 +1,6 @@
 package com.application.devhub.ratelimit;
 
+import com.application.devhub.common.metrics.DevHubMetrics;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.BucketConfiguration;
@@ -17,10 +18,12 @@ public class RateLimiter {
 
     private final ProxyManager<String> buckets;
     private final boolean enabled;
+    private final DevHubMetrics metrics;
     private final Map<RateLimitPolicy, BucketConfiguration> configurations = new EnumMap<>(RateLimitPolicy.class);
 
-    public RateLimiter(ProxyManager<String> buckets, RateLimitProperties properties) {
+    public RateLimiter(ProxyManager<String> buckets, RateLimitProperties properties, DevHubMetrics metrics) {
         this.buckets = buckets;
+        this.metrics = metrics;
         this.enabled = properties.enabled();
         for (RateLimitPolicy policy : RateLimitPolicy.values()) {
             configurations.put(policy, configurationOf(properties.limitFor(policy)));
@@ -33,6 +36,7 @@ public class RateLimiter {
         }
         ConsumptionProbe probe = bucket(policy, key).tryConsumeAndReturnRemaining(1);
         if (!probe.isConsumed()) {
+            metrics.rateLimitRejection(policy);
             throw new RateLimitExceededException(Duration.ofNanos(probe.getNanosToWaitForRefill()));
         }
     }
@@ -43,6 +47,7 @@ public class RateLimiter {
         }
         EstimationProbe probe = bucket(policy, key).estimateAbilityToConsume(1);
         if (!probe.canBeConsumed()) {
+            metrics.rateLimitRejection(policy);
             throw new RateLimitExceededException(Duration.ofNanos(probe.getNanosToWaitForRefill()));
         }
     }

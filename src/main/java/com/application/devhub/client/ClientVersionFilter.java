@@ -2,6 +2,7 @@ package com.application.devhub.client;
 
 import com.application.devhub.common.api.EnvelopeWriter;
 import com.application.devhub.common.api.ErrorCode;
+import com.application.devhub.common.metrics.DevHubMetrics;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,6 +39,7 @@ public class ClientVersionFilter extends OncePerRequestFilter {
 
     private final ClientVersionProperties properties;
     private final EnvelopeWriter envelopeWriter;
+    private final DevHubMetrics metrics;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -56,6 +58,7 @@ public class ClientVersionFilter extends OncePerRequestFilter {
         if (minimum.isPresent() && version.isPresent() && version.get().isOlderThan(minimum.get())) {
             log.info("Rejected outdated client: platform={} version={} minimum={} path={}",
                     platform, version.get(), minimum.get(), request.getRequestURI());
+            metrics.outdatedClientRejection(platform, version.get().toString());
             envelopeWriter.writeError(response, ErrorCode.APP_UPDATE_REQUIRED);
             return;
         }
