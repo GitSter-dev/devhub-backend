@@ -1,0 +1,16 @@
+# Copy to prod.tfvars (gitignored) and fill in.
+region            = "eu-north-1"
+availability_zone = "eu-north-1a"
+instance_type     = "c7i-flex.large"
+
+# Empty derives an sslip.io name from the Elastic IP.
+custom_domain = "api.example.com"
+acme_email    = "ops@example.com"
+ses_identity  = "example.com"
+
+# GitHub OIDC trust: "owner/repo" plus the numeric IDs from the GitHub API.
+github_repo            = "your-org/devhub-backend"
+github_owner_id        = "000000"
+github_repo_id         = "000000000"
+console_github_repo    = "your-org/devhub-console"
+console_github_repo_id = "000000000"
