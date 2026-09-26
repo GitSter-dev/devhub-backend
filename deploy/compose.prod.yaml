@@ -37,6 +37,10 @@ services:
         condition: service_healthy
     env_file:
       - /opt/devhub/app.env
+    environment:
+      # Labels every metric and trace with the build and environment it came from.
+      SERVICE_VERSION: ${IMAGE_TAG}
+      DEPLOY_ENVIRONMENT: production
     volumes:
       - /opt/devhub/secrets:/run/secrets:ro
     ports:
