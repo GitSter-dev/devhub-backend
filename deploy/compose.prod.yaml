@@ -52,6 +52,21 @@ services:
     tmpfs:
       - /tmp
 
+  console:
+    image: ${CONSOLE_ECR_REPOSITORY_URL:-console}:${CONSOLE_IMAGE_TAG:-none}
+    profiles: [console]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/console/"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
+    mem_limit: 64m
+    read_only: true
+    tmpfs:
+      - /tmp
+
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped

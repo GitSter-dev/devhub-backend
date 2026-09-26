@@ -12,4 +12,7 @@ module "app" {
   github_repo_id    = var.github_repo_id
   parameter_path    = "/devhub/prod"
   ses_identity      = var.ses_identity
+
+  console_github_repo    = var.console_github_repo
+  console_github_repo_id = var.console_github_repo_id
 }

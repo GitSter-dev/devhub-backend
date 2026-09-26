@@ -106,3 +106,15 @@ variable "ses_identity" {
   type        = string
   default     = ""
 }
+
+variable "console_github_repo" {
+  description = "owner/name of the console repo allowed to assume the console deploy role. Empty creates no role."
+  type        = string
+  default     = ""
+}
+
+variable "console_github_repo_id" {
+  description = "Numeric GitHub repository id of the console repo, used for the ID-qualified OIDC subject."
+  type        = string
+  default     = ""
+}

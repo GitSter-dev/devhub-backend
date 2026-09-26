@@ -6,11 +6,12 @@
 
 locals {
   config = {
-    DB_HOST            = "postgres"
-    DB_PORT            = "5432"
-    DB_NAME            = var.db_name
-    DB_USER            = var.db_user
-    ECR_REPOSITORY_URL = aws_ecr_repository.backend.repository_url
+    DB_HOST                    = "postgres"
+    DB_PORT                    = "5432"
+    DB_NAME                    = var.db_name
+    DB_USER                    = var.db_user
+    ECR_REPOSITORY_URL         = aws_ecr_repository.backend.repository_url
+    CONSOLE_ECR_REPOSITORY_URL = aws_ecr_repository.console.repository_url
 
     DEVHUB_DOMAIN = local.domain
     ACME_EMAIL    = var.acme_email
@@ -26,11 +27,11 @@ locals {
 
     REALTIME_ALLOWED_ORIGINS = "https://${local.domain}"
 
-    MAIL_HOST = "email-smtp.${var.region}.amazonaws.com"
-    MAIL_PORT         = "587"
-    MAIL_SMTP_AUTH    = "true"
+    MAIL_HOST          = "email-smtp.${var.region}.amazonaws.com"
+    MAIL_PORT          = "587"
+    MAIL_SMTP_AUTH     = "true"
     MAIL_SMTP_STARTTLS = "true"
-    MAIL_FROM = var.ses_identity != "" ? "DevHub <${var.ses_identity}>" : var.mail_from
+    MAIL_FROM          = var.ses_identity != "" ? "DevHub <${var.ses_identity}>" : var.mail_from
 
     JWT_ISSUER               = "devhub"
     JWT_PUBLIC_KEY_LOCATION  = "file:/run/secrets/public.pem"

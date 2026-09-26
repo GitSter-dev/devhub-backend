@@ -5,3 +5,6 @@ output "ecr_repository_url" { value = module.app.ecr_repository_url }
 output "github_deploy_role_arn" { value = module.app.github_deploy_role_arn }
 output "backup_bucket" { value = module.app.backup_bucket }
 output "smtp_user" { value = module.app.smtp_user }
+output "console_ecr_repository_url" { value = module.app.console_ecr_repository_url }
+output "github_console_deploy_role_arn" { value = module.app.github_console_deploy_role_arn }
+output "deploy_console_document" { value = module.app.deploy_console_document }

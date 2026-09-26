@@ -48,7 +48,7 @@ data "aws_iam_policy_document" "instance" {
       "ecr:BatchGetImage",
       "ecr:GetDownloadUrlForLayer",
     ]
-    resources = [aws_ecr_repository.backend.arn]
+    resources = [aws_ecr_repository.backend.arn, aws_ecr_repository.console.arn]
   }
 
   statement {

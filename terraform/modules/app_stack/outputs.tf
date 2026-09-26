@@ -30,3 +30,15 @@ output "data_volume_id" {
 output "smtp_user" {
   value = aws_iam_user.smtp.name
 }
+
+output "console_ecr_repository_url" {
+  value = aws_ecr_repository.console.repository_url
+}
+
+output "github_console_deploy_role_arn" {
+  value = local.console_repo_enabled ? aws_iam_role.github_console_deploy[0].arn : null
+}
+
+output "deploy_console_document" {
+  value = aws_ssm_document.deploy_console.name
+}

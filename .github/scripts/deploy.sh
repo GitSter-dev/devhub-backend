@@ -8,7 +8,7 @@ set -euo pipefail
 # The runtime topology lives in the repo, so ship the current version before
 # rolling. It carries no secrets: those are read from Parameter Store by the
 # instance role.
-BUNDLE=$(tar -czf - -C deploy compose.prod.yaml Caddyfile deploy.sh render-env.sh backup.sh | base64 -w0)
+BUNDLE=$(tar -czf - -C deploy compose.prod.yaml Caddyfile deploy.sh deploy-console.sh write-image-env.sh render-env.sh backup.sh | base64 -w0)
 
 command_id=$(aws ssm send-command \
 	--region "$AWS_REGION" \

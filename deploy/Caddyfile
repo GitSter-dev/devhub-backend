@@ -8,12 +8,26 @@
 	@actuator path /actuator /actuator/*
 	respond @actuator 404
 
-	reverse_proxy app:8080 {
-		header_up X-Forwarded-For {remote_host}
-		header_up X-Real-IP {remote_host}
+	redir /console /console/ 308
 
-		lb_try_duration 30s
-		lb_try_interval 500ms
+	handle /console/* {
+		header {
+			Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+			X-Content-Type-Options nosniff
+			Referrer-Policy no-referrer
+			X-Frame-Options DENY
+		}
+		reverse_proxy console:8080
+	}
+
+	handle {
+		reverse_proxy app:8080 {
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Real-IP {remote_host}
+
+			lb_try_duration 30s
+			lb_try_interval 500ms
+		}
 	}
 
 	log {
