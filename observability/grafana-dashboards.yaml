@@ -1,0 +1,10 @@
+# Loads the DevHub dashboards into the local Grafana (compose.yaml). In Grafana Cloud,
+# import the same JSON files instead; see deploy/OBSERVABILITY.md.
+apiVersion: 1
+
+providers:
+  - name: DevHub
+    folder: DevHub
+    type: file
+    options:
+      path: /otel-lgtm/devhub-dashboards
