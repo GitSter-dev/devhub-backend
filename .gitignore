@@ -48,3 +48,5 @@ graphify-out/
 *.tfplan
 tfplan
 crash.log
+terraform/envs/*/prod.tfvars
+terraform/envs/*/backend.hcl
