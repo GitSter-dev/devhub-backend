@@ -38,7 +38,8 @@ public enum ErrorCode {
     CANNOT_BLOCK_SELF(HttpStatus.BAD_REQUEST),
     ACCOUNT_SUSPENDED(HttpStatus.FORBIDDEN),
     ACCOUNT_BANNED(HttpStatus.FORBIDDEN),
-    ACCOUNT_DEACTIVATED(HttpStatus.FORBIDDEN);
+    ACCOUNT_DEACTIVATED(HttpStatus.FORBIDDEN),
+    APP_UPDATE_REQUIRED(HttpStatus.UPGRADE_REQUIRED);
 
     private final HttpStatus status;
 

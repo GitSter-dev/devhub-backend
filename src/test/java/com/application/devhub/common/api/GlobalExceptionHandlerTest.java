@@ -1,5 +1,6 @@
 package com.application.devhub.common.api;
 
+import com.application.devhub.client.ClientVersionFilter;
 import com.application.devhub.idempotency.IdempotencyFilter;
 import com.application.devhub.ratelimit.RateLimiter;
 import jakarta.validation.Valid;
@@ -28,7 +29,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = GlobalExceptionHandlerTest.ProbeController.class,
-        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = IdempotencyFilter.class))
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
+                classes = {IdempotencyFilter.class, ClientVersionFilter.class}))
 @AutoConfigureMockMvc(addFilters = false)
 @Import({GlobalExceptionHandlerTest.ProbeController.class, GlobalExceptionHandler.class, ErrorMessageResolver.class})
 class GlobalExceptionHandlerTest {
