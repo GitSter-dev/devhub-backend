@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: "Existing image tag to roll back to. Leave blank to build HEAD."
+        description: "Existing image tag to roll back to: a release (v1.2.0) or a commit SHA. Leave blank to build HEAD."
         required: false
 
 concurrency:
