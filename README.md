@@ -76,6 +76,7 @@ flowchart LR
 | Integrations | Amazon SES (email), Firebase Cloud Messaging (push), Thymeleaf email templates |
 | Resilience | Bucket4j + Caffeine rate limiting, idempotency keys |
 | Infrastructure | AWS (EC2, ECR, SSM, SES, S3, DLM) via Terraform, Caddy, Docker |
+| Observability | OpenTelemetry (OTLP) metrics and traces, Grafana dashboards |
 | CI/CD | GitHub Actions with OIDC, Testcontainers |
 
 ## Run it locally
@@ -89,6 +90,7 @@ cp .env.example .env   # local defaults work as-is
 
 - API: http://localhost:8080, with interactive docs at http://localhost:8080/swagger-ui.html
 - Emails (verification codes etc.): http://localhost:8025 (Mailpit)
+- Metrics and traces: http://localhost:3000 (Grafana, with the DevHub dashboard preloaded)
 - A Postman collection with 130+ scenario requests lives in [`postman/`](postman/)
 
 ## Testing & delivery
@@ -114,9 +116,14 @@ Packages are organised by feature under `src/main/java/com/application/devhub`:
 | `account` | Deletion, restore and purge lifecycle |
 | `outbox`, `idempotency`, `ratelimit`, `common` | Cross-cutting infrastructure |
 
-Operations docs: [`deploy/RESTORE.md`](deploy/RESTORE.md) (backups) and
-[`deploy/ADMIN.md`](deploy/ADMIN.md) (granting moderator access). Infrastructure lives in
-[`terraform/`](terraform/).
+Operations docs:
+- [`deploy/RELEASING.md`](deploy/RELEASING.md): cutting releases and retiring old app versions
+- [`deploy/OBSERVABILITY.md`](deploy/OBSERVABILITY.md): metrics, traces and dashboards
+- [`deploy/RESTORE.md`](deploy/RESTORE.md): backups and restores
+- [`deploy/ADMIN.md`](deploy/ADMIN.md): granting moderator access
+- [`docs/decisions/`](docs/decisions/): architecture decisions
+
+Infrastructure lives in [`terraform/`](terraform/).
 
 </details>
 
