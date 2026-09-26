@@ -1,0 +1,114 @@
+name: release
+
+# Names the build that is running in production. Nothing is rebuilt: the image the
+# last successful deploy rolled out gets a version tag in ECR, and the same commit
+# gets a git tag and a GitHub release with generated notes. See deploy/RELEASING.md.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, as MAJOR.MINOR.PATCH (no leading v)"
+        required: true
+
+# Shares the deploy group so a release never names a build that is being replaced.
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: write
+  actions: read
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    environment: production
+    env:
+      VERSION: ${{ inputs.version }}
+      TAG: v${{ inputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check the version
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::run this workflow from main"
+            exit 1
+          fi
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::$VERSION is not MAJOR.MINOR.PATCH"
+            exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "::error::$TAG already exists"
+            exit 1
+          fi
+          latest=$(git tag -l 'v*' | sort -V | tail -1)
+          if [ -n "$latest" ] && [ "$(printf '%s\n%s\n' "$latest" "$TAG" | sort -V | tail -1)" != "$TAG" ]; then
+            echo "::error::$TAG must be newer than the latest release, $latest"
+            exit 1
+          fi
+
+      - id: live
+        name: Find the build running in production
+        run: |
+          # Manual rollbacks are workflow_dispatch runs, so the latest successful
+          # push-triggered deploy is the build that main last rolled out.
+          sha=$(gh run list --workflow deploy.yml --branch main --event push --status success \
+            --limit 1 --json headSha --jq '.[0].headSha')
+          if [ -z "$sha" ]; then
+            echo "::error::no successful deploy of main found"
+            exit 1
+          fi
+          echo "Releasing $sha as $TAG"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Tag the image
+        env:
+          SHA: ${{ steps.live.outputs.sha }}
+          REPOSITORY: ${{ vars.ECR_REPOSITORY_URL }}
+        run: |
+          repo="${REPOSITORY#*/}"
+          image() {
+            aws ecr batch-get-image --repository-name "$repo" --image-ids "imageTag=$1" \
+              --query "images[0].$2" --output text
+          }
+
+          digest=$(image "$SHA" imageId.imageDigest)
+          if [ "$digest" = "None" ]; then
+            echo "::error::no image tagged $SHA in $repo"
+            exit 1
+          fi
+
+          # Tags are immutable, so a re-run after a later step failed finds the tag
+          # already in place and must not try to write it again.
+          existing=$(image "$TAG" imageId.imageDigest)
+          if [ "$existing" = "$digest" ]; then
+            echo "$TAG already points at $digest"
+          elif [ "$existing" != "None" ]; then
+            echo "::error::$TAG already points at a different image, $existing"
+            exit 1
+          else
+            aws ecr put-image --repository-name "$repo" --image-tag "$TAG" \
+              --image-manifest "$(image "$SHA" imageManifest)" \
+              --image-manifest-media-type "$(image "$SHA" imageManifestMediaType)" >/dev/null
+            echo "Tagged $digest as $TAG"
+          fi
+
+      - name: Publish the release
+        env:
+          SHA: ${{ steps.live.outputs.sha }}
+        run: |
+          gh release create "$TAG" \
+            --target "$SHA" \
+            --title "DevHub backend $VERSION" \
+            --generate-notes
