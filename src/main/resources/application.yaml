@@ -43,6 +43,40 @@ management:
   health:
     mail:
       enabled: false
+  # Metrics and traces leave over OTLP: to the local Grafana stack in compose.yaml during
+  # development, to Grafana Cloud in production (see deploy/OBSERVABILITY.md). Off unless
+  # OTEL_EXPORT_ENABLED is set, so tests and bare runs never try to reach a collector.
+  otlp:
+    metrics:
+      export:
+        enabled: ${OTEL_EXPORT_ENABLED:false}
+        url: ${OTLP_ENDPOINT:http://localhost:4318}/v1/metrics
+        step: ${OTLP_METRICS_STEP:1m}
+        headers:
+          Authorization: ${OTLP_AUTHORIZATION:}
+  opentelemetry:
+    resource-attributes:
+      service.name: devhub-backend
+      service.version: ${SERVICE_VERSION:dev}
+      deployment.environment.name: ${DEPLOY_ENVIRONMENT:local}
+    tracing:
+      export:
+        otlp:
+          endpoint: ${OTLP_ENDPOINT:http://localhost:4318}/v1/traces
+          headers:
+            Authorization: ${OTLP_AUTHORIZATION:}
+  tracing:
+    export:
+      otlp:
+        enabled: ${OTEL_EXPORT_ENABLED:false}
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:0.1}
+  metrics:
+    distribution:
+      # A few fixed latency buckets instead of a full histogram: enough for p95 and SLO
+      # panels while keeping the series count well inside Grafana Cloud's free tier.
+      slo:
+        http.server.requests: 25ms,50ms,100ms,250ms,500ms,1s,2500ms
 
 springdoc:
   override-with-generic-response: false
