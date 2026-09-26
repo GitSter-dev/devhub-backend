@@ -57,6 +57,12 @@ devhub:
     title: DevHub API
     version: '@project.version@'
     description: Backend API for the DevHub mobile app. Every response uses the ApiEnvelope shape; errors carry a stable error.code the client can switch on.
+  clients:
+    # Oldest app build each platform may use. Raise it when an API change would
+    # break older installs; 0.0.0 turns the gate off.
+    minimum-versions:
+      android: ${MIN_ANDROID_VERSION:0.0.0}
+      ios: ${MIN_IOS_VERSION:0.0.0}
   mail:
     from: ${MAIL_FROM:DevHub <no-reply@devhub.local>}
     locale: ${MAIL_LOCALE:en}
