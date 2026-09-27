@@ -8,10 +8,6 @@ import org.springframework.http.server.observation.ServerRequestObservationConte
 @Configuration(proxyBeanMethods = false)
 public class ObservabilityConfig {
 
-    /**
-     * The container health check polls /actuator every few seconds. Recording those as
-     * requests would bury real traffic in the charts and fill the trace store with noise.
-     */
     @Bean
     ObservationPredicate ignoreActuatorRequests() {
         return (name, context) -> !(context instanceof ServerRequestObservationContext request

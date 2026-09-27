@@ -18,14 +18,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Turns away app builds older than the configured minimum for their platform, so the
- * API can evolve without breaking installs that never update themselves.
- *
- * <p>Runs ahead of Spring Security so that sign-in and token refresh are gated too.
- * Requests without the headers (the moderator console, tools, app builds from before
- * the headers existed) pass through untouched.
- */
 @Slf4j
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 50)

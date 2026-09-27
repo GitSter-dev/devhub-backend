@@ -6,10 +6,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Oldest app version each platform may still use, keyed by the {@code X-App-Platform} value.
- * A platform without an entry is never gated.
- */
 @ConfigurationProperties("devhub.clients")
 public record ClientVersionProperties(Map<String, String> minimumVersions) {
 

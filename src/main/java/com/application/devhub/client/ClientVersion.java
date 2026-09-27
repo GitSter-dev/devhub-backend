@@ -5,10 +5,6 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * The MAJOR.MINOR.PATCH part of an app version. Pre-release and build suffixes
- * ({@code 1.2.0-rc.1}, {@code 1.2.0+42}) are ignored: the gate compares releases.
- */
 public record ClientVersion(int major, int minor, int patch) implements Comparable<ClientVersion> {
 
     private static final Pattern SEMVER = Pattern.compile("^(\\d{1,4})\\.(\\d{1,4})\\.(\\d{1,4})(?:[-+].*)?$");
