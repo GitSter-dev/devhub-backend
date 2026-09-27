@@ -24,7 +24,10 @@ public record CreatePostRequest(
         String codeLanguage,
 
         @Schema(description = "The post this replies to; omit for an original post")
-        UUID replyToId) {
+        UUID replyToId,
+        @Schema(description = "Community to post into; you must be a member. Ignored for replies, which stay in "
+                + "their thread's community")
+        UUID communityId) {
 
     public CreatePostRequest {
         body = blankToNull(body, true);

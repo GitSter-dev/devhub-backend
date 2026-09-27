@@ -28,6 +28,7 @@ public class PostViews {
                    a.id AS author_id, a.username AS author_username, a.display_name AS author_display_name,
                    parent_author.username AS reply_to_username,
                    parent.deleted_at IS NOT NULL AS reply_to_deleted,
+                   c.id AS community_id, c.slug AS community_slug, c.name AS community_name,
                    (SELECT count(*) FROM posts r WHERE r.parent_id = p.id AND r.deleted_at IS NULL) AS reply_count,
                    (SELECT count(*) FROM post_likes l WHERE l.post_id = p.id) AS like_count,
                    EXISTS (SELECT 1 FROM post_likes l WHERE l.post_id = p.id AND l.user_id = :viewer) AS liked
@@ -35,6 +36,7 @@ public class PostViews {
             JOIN users a ON a.id = p.author_id
             LEFT JOIN posts parent ON parent.id = p.parent_id
             LEFT JOIN users parent_author ON parent_author.id = parent.author_id
+            LEFT JOIN communities c ON c.id = p.community_id
             """;
 
     private static final String AFTER = "(p.created_at, p.id) > (CAST(:cursorAt AS timestamptz), CAST(:cursorId AS uuid))";
@@ -44,7 +46,7 @@ public class PostViews {
             NOT EXISTS (SELECT 1 FROM reports r
                         WHERE r.target_type = 'POST' AND r.target_id = p.id AND r.reporter_id = :viewer)""";
 
-    private static final String VISIBLE = "(a.id = :viewer OR (" + VisibilitySql.visibleUser("viewer", "a")
+    private static final String VISIBLE = "c.removed_at IS NULL AND (a.id = :viewer OR (" + VisibilitySql.visibleUser("viewer", "a")
             + " AND p.removed_at IS NULL AND p.hidden_at IS NULL AND " + NOT_REPORTED_BY_VIEWER + "))";
 
     private final JdbcClient jdbcClient;
@@ -99,6 +101,11 @@ public class PostViews {
         return new KeysetCursor(post.createdAt(), post.id());
     }
 
+    private static PostView.Community community(ResultSet row) throws SQLException {
+        UUID id = row.getObject("community_id", UUID.class);
+        return id == null ? null : new PostView.Community(id, row.getString("community_slug"), row.getString("community_name"));
+    }
+
     private static PostView toView(ResultSet row, UUID viewerId) throws SQLException {
         UUID authorId = row.getObject("author_id", UUID.class);
         return new PostView(
@@ -118,6 +125,7 @@ public class PostViews {
                 authorId.equals(viewerId),
                 row.getBoolean("deleted"),
                 row.getBoolean("removed"),
-                row.getBoolean("under_review"));
+                row.getBoolean("under_review"),
+                community(row));
     }
 }

@@ -44,21 +44,26 @@ public class Post extends BaseEntity {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
-    private Post(UUID authorId, PostContent content, UUID parentId, UUID rootId) {
+    @Column(name = "community_id", updatable = false)
+    private UUID communityId;
+
+    private Post(UUID authorId, PostContent content, UUID parentId, UUID rootId, UUID communityId) {
         this.authorId = authorId;
         this.body = content.body();
         this.code = content.code();
         this.codeLanguage = content.codeLanguage();
         this.parentId = parentId;
         this.rootId = rootId;
+        this.communityId = communityId;
     }
 
-    public static Post original(UUID authorId, PostContent content) {
-        return new Post(authorId, content, null, null);
+    public static Post original(UUID authorId, PostContent content, UUID communityId) {
+        return new Post(authorId, content, null, null, communityId);
     }
 
     public static Post replyTo(Post parent, UUID authorId, PostContent content) {
-        return new Post(authorId, content, parent.getId(), parent.isReply() ? parent.getRootId() : parent.getId());
+        return new Post(authorId, content, parent.getId(), parent.isReply() ? parent.getRootId() : parent.getId(),
+                parent.getCommunityId());
     }
 
     public boolean isReply() {
