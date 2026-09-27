@@ -30,7 +30,10 @@ public class CommunityViews {
                    ARRAY(SELECT t.topic_slug FROM community_topics t WHERE t.community_id = c.id ORDER BY t.topic_slug) AS topics,
                    (SELECT m.role FROM community_members m WHERE m.community_id = c.id AND m.user_id = :viewer) AS viewer_role,
                    EXISTS (SELECT 1 FROM community_join_requests r
-                           WHERE r.community_id = c.id AND r.user_id = :viewer AND r.status = 'PENDING') AS requested
+                           WHERE r.community_id = c.id AND r.user_id = :viewer AND r.status = 'PENDING') AS requested,
+                   EXISTS (SELECT 1 FROM community_bans b
+                           WHERE b.community_id = c.id AND b.user_id = :viewer
+                             AND (b.expires_at IS NULL OR b.expires_at > now())) AS banned
             FROM communities c
             WHERE c.slug = :slug AND c.removed_at IS NULL
             """;
@@ -85,7 +88,15 @@ public class CommunityViews {
                 .param("viewer", viewerId)
                 .param("slug", slug)
                 .query((row, index) -> toView(row))
-                .optional();
+                .optional()
+                .map(community -> community.withRules(rules(community.id())));
+    }
+
+    private List<CommunityView.Rule> rules(UUID communityId) {
+        return jdbcClient.sql("SELECT title, body FROM community_rules WHERE community_id = :communityId ORDER BY position")
+                .param("communityId", communityId)
+                .query((row, index) -> new CommunityView.Rule(row.getString("title"), row.getString("body")))
+                .list();
     }
 
     @Transactional(readOnly = true)
@@ -147,7 +158,9 @@ public class CommunityViews {
                 row.getInt("member_count"),
                 row.getInt("slow_mode_seconds"),
                 row.getTimestamp("created_at").toInstant(),
-                new CommunityView.Viewer(role == null ? null : CommunityRole.valueOf(role), row.getBoolean("requested")));
+                List.of(),
+                new CommunityView.Viewer(role == null ? null : CommunityRole.valueOf(role), row.getBoolean("requested"),
+                        row.getBoolean("banned")));
     }
 
     private static List<String> topics(Array array) throws SQLException {
@@ -160,9 +173,17 @@ public class CommunityViews {
 
     public record CommunityView(UUID id, String slug, String name, String description, JoinPolicy joinPolicy,
                                 List<String> topics, int memberCount, int slowModeSeconds, Instant createdAt,
-                                Viewer viewer) {
+                                List<Rule> rules, Viewer viewer) {
 
-        public record Viewer(CommunityRole role, boolean requested) {
+        CommunityView withRules(List<Rule> rules) {
+            return new CommunityView(id, slug, name, description, joinPolicy, topics, memberCount, slowModeSeconds,
+                    createdAt, rules, viewer);
+        }
+
+        public record Rule(String title, String body) {
+        }
+
+        public record Viewer(CommunityRole role, boolean requested, boolean banned) {
         }
     }
 }

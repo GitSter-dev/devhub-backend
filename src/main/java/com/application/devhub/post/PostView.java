@@ -21,6 +21,7 @@ public record PostView(
         boolean deleted,
         boolean removed,
         boolean underReview,
+        boolean pinned,
         Community community) {
 
     public record Author(UUID id, String username, String displayName) {

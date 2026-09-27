@@ -5,6 +5,7 @@ import com.application.devhub.chat.ConversationService;
 import com.application.devhub.user.HeldUsernameRepository;
 import com.application.devhub.user.User;
 import com.application.devhub.user.UserRepository;
+import com.application.devhub.community.CommunityDeparture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -30,6 +31,7 @@ public class AccountPurger {
     private final ConversationMemberRepository memberRepository;
     private final ConversationService conversationService;
     private final AccountProperties properties;
+    private final CommunityDeparture communityDeparture;
 
     @Transactional
     public int purgeDue() {
@@ -45,6 +47,7 @@ public class AccountPurger {
     private void purge(User user) {
         UUID userId = user.getId();
         leaveGroups(userId);
+        communityDeparture.leaveEverything(userId);
         purgeRepository.erasePosts(userId);
         purgeRepository.eraseMessages(userId);
         purgeRepository.deleteLikes(userId);

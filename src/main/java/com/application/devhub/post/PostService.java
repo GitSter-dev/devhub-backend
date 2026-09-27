@@ -4,11 +4,17 @@ import com.application.devhub.block.Reachability;
 import com.application.devhub.common.api.ApiException;
 import com.application.devhub.notification.ActivityPublisher;
 import com.application.devhub.notification.NotificationWriter;
+import com.application.devhub.common.api.ErrorCode;
+import com.application.devhub.community.Community;
 import com.application.devhub.community.CommunityAccess;
+import com.application.devhub.community.CommunityMember;
+import com.application.devhub.ratelimit.RateLimitExceededException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.UUID;
 
 @Service
@@ -28,8 +34,7 @@ public class PostService {
                 ? Post.original(authorId, request.content(), request.communityId())
                 : Post.replyTo(reachablePost(authorId, request.replyToId()), authorId, request.content());
         if (post.getCommunityId() != null) {
-            communityAccess.live(post.getCommunityId());
-            communityAccess.member(post.getCommunityId(), authorId).posted();
+            enterCommunity(post, authorId);
         }
         UUID id = postRepository.saveAndFlush(post).getId();
         if (post.isReply()) {
@@ -62,6 +67,22 @@ public class PostService {
     public void unlike(UUID userId, UUID postId) {
         if (likeRepository.unlike(postId, userId) > 0) {
             activityPublisher.likeChanged(userId, postId);
+        }
+    }
+
+    private void enterCommunity(Post post, UUID authorId) {
+        Community community = communityAccess.live(post.getCommunityId());
+        communityAccess.ensureNotBanned(community.getId(), authorId);
+        CommunityMember member = communityAccess.member(community.getId(), authorId);
+        if (!post.isReply() && !member.canModerate() && community.getSlowModeSeconds() > 0
+                && member.getLastPostedAt() != null) {
+            Instant allowedFrom = member.getLastPostedAt().plusSeconds(community.getSlowModeSeconds());
+            if (allowedFrom.isAfter(Instant.now())) {
+                throw new RateLimitExceededException(ErrorCode.SLOW_MODE_ACTIVE, Duration.between(Instant.now(), allowedFrom));
+            }
+        }
+        if (!post.isReply()) {
+            member.posted();
         }
     }
 
