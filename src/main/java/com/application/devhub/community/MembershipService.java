@@ -3,10 +3,13 @@ package com.application.devhub.community;
 import com.application.devhub.common.api.ApiException;
 import com.application.devhub.common.api.ErrorCode;
 import com.application.devhub.common.metrics.DevHubMetrics;
+import com.application.devhub.notification.NotificationType;
+import com.application.devhub.notification.NotificationWriter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -18,6 +21,7 @@ public class MembershipService {
     private final CommunityMemberRepository memberRepository;
     private final CommunityJoinRequestRepository requestRepository;
     private final DevHubMetrics metrics;
+    private final NotificationWriter notificationWriter;
 
     @Transactional
     public void join(UUID userId, String slug, JoinCommunityRequest request) {
@@ -25,10 +29,14 @@ public class MembershipService {
         if (access.membership(community.getId(), userId).isPresent()) {
             return;
         }
+        access.ensureNotBanned(community.getId(), userId);
         if (community.getJoinPolicy() == JoinPolicy.OPEN) {
             admit(community.getId(), userId);
         } else if (pendingRequest(community.getId(), userId) == null) {
-            requestRepository.save(CommunityJoinRequest.ask(community.getId(), userId, request.message()));
+            CommunityJoinRequest ask = requestRepository.saveAndFlush(
+                    CommunityJoinRequest.ask(community.getId(), userId, request.message()));
+            notificationWriter.record(access.moderatorIds(community.getId()), NotificationType.COMMUNITY_JOIN_REQUESTED,
+                    community.getId(), userId, ask.getId());
         }
         metrics.communityJoin(community.getJoinPolicy());
     }
@@ -54,7 +62,10 @@ public class MembershipService {
     public void approve(UUID moderatorId, String slug, UUID requestId) {
         CommunityJoinRequest request = pendingFor(moderatorId, slug, requestId);
         request.approve(moderatorId);
+        access.ensureNotBanned(request.getCommunityId(), request.getUserId());
         admit(request.getCommunityId(), request.getUserId());
+        notificationWriter.record(List.of(request.getUserId()), NotificationType.COMMUNITY_JOIN_APPROVED,
+                request.getCommunityId(), moderatorId, request.getCommunityId());
     }
 
     @Transactional

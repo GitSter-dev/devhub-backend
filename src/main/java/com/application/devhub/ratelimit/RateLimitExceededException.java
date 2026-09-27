@@ -12,7 +12,11 @@ public class RateLimitExceededException extends ApiException {
     private final Duration retryAfter;
 
     public RateLimitExceededException(Duration retryAfter) {
-        super(ErrorCode.TOO_MANY_REQUESTS);
+        this(ErrorCode.TOO_MANY_REQUESTS, retryAfter);
+    }
+
+    public RateLimitExceededException(ErrorCode errorCode, Duration retryAfter) {
+        super(errorCode);
         this.retryAfter = retryAfter;
     }
 }

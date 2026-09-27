@@ -25,6 +25,7 @@ public class PostViews {
                    p.deleted_at IS NOT NULL AS deleted,
                    p.removed_at IS NOT NULL AS removed,
                    p.hidden_at IS NOT NULL AS under_review,
+                   p.pinned_at IS NOT NULL AS pinned,
                    a.id AS author_id, a.username AS author_username, a.display_name AS author_display_name,
                    parent_author.username AS reply_to_username,
                    parent.deleted_at IS NOT NULL AS reply_to_deleted,
@@ -126,6 +127,7 @@ public class PostViews {
                 row.getBoolean("deleted"),
                 row.getBoolean("removed"),
                 row.getBoolean("under_review"),
+                row.getBoolean("pinned"),
                 community(row));
     }
 }
