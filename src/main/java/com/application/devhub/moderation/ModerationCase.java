@@ -29,6 +29,9 @@ public class ModerationCase extends BaseEntity {
     @Column(name = "owner_id", nullable = false, updatable = false)
     private UUID ownerId;
 
+    @Column(name = "community_id", updatable = false)
+    private UUID communityId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 12)
     private CaseStatus status;
@@ -54,7 +57,8 @@ public class ModerationCase extends BaseEntity {
     @Column(name = "resolved_at")
     private Instant resolvedAt;
 
-    private ModerationCase(ReportTarget targetType, UUID targetId, UUID ownerId) {
+    private ModerationCase(ReportTarget targetType, UUID targetId, UUID ownerId, UUID communityId) {
+        this.communityId = communityId;
         this.targetType = targetType;
         this.targetId = targetId;
         this.ownerId = ownerId;
@@ -63,8 +67,8 @@ public class ModerationCase extends BaseEntity {
         this.lastReportedAt = this.firstReportedAt;
     }
 
-    public static ModerationCase open(ReportTarget targetType, UUID targetId, UUID ownerId) {
-        return new ModerationCase(targetType, targetId, ownerId);
+    public static ModerationCase open(ReportTarget targetType, UUID targetId, UUID ownerId, UUID communityId) {
+        return new ModerationCase(targetType, targetId, ownerId, communityId);
     }
 
     public void recordReport(int weight) {

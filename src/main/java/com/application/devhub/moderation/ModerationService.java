@@ -11,6 +11,8 @@ import com.application.devhub.session.RefreshTokenService;
 import com.application.devhub.session.RevocationReason;
 import com.application.devhub.user.User;
 import com.application.devhub.user.UserRepository;
+import com.application.devhub.community.Community;
+import com.application.devhub.community.CommunityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +34,7 @@ public class ModerationService {
     private final UserRepository userRepository;
     private final RefreshTokenService refreshTokenService;
     private final NotificationWriter notificationWriter;
+    private final CommunityRepository communityRepository;
 
     @Transactional
     public void act(UUID moderatorId, UUID caseId, ModerationActionRequest request) {
@@ -72,6 +75,7 @@ public class ModerationService {
                 owner(moderationCase).reinstate();
                 moderationCase.resolve(moderatorId, CaseStatus.DISMISSED);
             }
+            case COMMUNITY_BAN, COMMUNITY_UNBAN -> throw ApiException.badRequest();
         }
         actionRepository.save(ModerationAction.of(caseId, moderatorId, request.action(), moderationCase.getOwnerId(),
                 request.note(), until));
@@ -81,6 +85,7 @@ public class ModerationService {
         switch (moderationCase.getTargetType()) {
             case POST -> post(moderationCase).remove();
             case MESSAGE -> message(moderationCase).remove();
+            case COMMUNITY -> community(moderationCase).takeDown();
             case USER -> throw ApiException.badRequest();
         }
         moderationCase.clearAutoHide();
@@ -91,6 +96,7 @@ public class ModerationService {
         switch (moderationCase.getTargetType()) {
             case POST -> post(moderationCase).restore();
             case MESSAGE -> message(moderationCase).restore();
+            case COMMUNITY -> community(moderationCase).restore();
             case USER -> {
             }
         }
@@ -113,6 +119,10 @@ public class ModerationService {
 
     private Message message(ModerationCase moderationCase) {
         return messageRepository.findById(moderationCase.getTargetId()).orElseThrow(ApiException::notFound);
+    }
+
+    private Community community(ModerationCase moderationCase) {
+        return communityRepository.findById(moderationCase.getTargetId()).orElseThrow(ApiException::notFound);
     }
 
     private User owner(ModerationCase moderationCase) {

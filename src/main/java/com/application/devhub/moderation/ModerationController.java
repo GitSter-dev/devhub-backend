@@ -28,8 +28,9 @@ public class ModerationController implements ModerationApi {
     @GetMapping
     public ApiEnvelope<CasePage> cases(JwtAuthenticationToken authentication,
                                        @RequestParam(defaultValue = "OPEN") CaseStatus status,
+                                       @RequestParam(required = false) UUID communityId,
                                        @RequestParam(required = false) String cursor) {
-        return ApiEnvelope.ok(moderationQueries.cases(status, cursor));
+        return ApiEnvelope.ok(moderationQueries.cases(status, communityId, cursor));
     }
 
     @Override

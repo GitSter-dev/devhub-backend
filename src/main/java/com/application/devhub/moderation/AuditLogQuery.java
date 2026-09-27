@@ -2,6 +2,7 @@ package com.application.devhub.moderation;
 
 import com.application.devhub.common.pagination.KeysetCursor;
 import com.application.devhub.moderation.ModerationViews.AuditEntry;
+import com.application.devhub.moderation.ModerationViews.CaseCommunity;
 import com.application.devhub.moderation.ModerationViews.AuditPage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -22,10 +23,12 @@ public class AuditLogQuery {
 
     private static final String ENTRIES = """
             SELECT a.id, a.case_id, m.username AS moderator_username, a.action, a.target_user_id,
-                   t.username AS target_username, a.note, a.acts_until, a.created_at
+                   t.username AS target_username, a.note, a.acts_until, a.created_at,
+                   cm.id AS community_id, cm.slug AS community_slug, cm.name AS community_name
             FROM moderation_actions a
             JOIN users m ON m.id = a.moderator_id
             LEFT JOIN users t ON t.id = a.target_user_id
+            LEFT JOIN communities cm ON cm.id = a.community_id
             WHERE TRUE
             """;
 
@@ -53,6 +56,11 @@ public class AuditLogQuery {
                 ? new KeysetCursor(page.getLast().createdAt(), page.getLast().id()).encode() : null);
     }
 
+    private static CaseCommunity community(ResultSet row) throws SQLException {
+        UUID id = row.getObject("community_id", UUID.class);
+        return id == null ? null : new CaseCommunity(id, row.getString("community_slug"), row.getString("community_name"));
+    }
+
     private static AuditEntry toEntry(ResultSet row) throws SQLException {
         Timestamp actsUntil = row.getTimestamp("acts_until");
         return new AuditEntry(
@@ -64,6 +72,7 @@ public class AuditLogQuery {
                 row.getString("target_username"),
                 row.getString("note"),
                 actsUntil == null ? null : actsUntil.toInstant(),
-                row.getTimestamp("created_at").toInstant());
+                row.getTimestamp("created_at").toInstant(),
+                community(row));
     }
 }
