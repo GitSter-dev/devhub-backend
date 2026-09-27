@@ -97,6 +97,9 @@ devhub:
     minimum-versions:
       android: ${MIN_ANDROID_VERSION:0.0.0}
       ios: ${MIN_IOS_VERSION:0.0.0}
+  communities:
+    min-account-age: ${COMMUNITY_MIN_ACCOUNT_AGE:7d}
+    max-owned: ${COMMUNITY_MAX_OWNED:3}
   mail:
     from: ${MAIL_FROM:DevHub <no-reply@devhub.local>}
     locale: ${MAIL_LOCALE:en}
@@ -138,6 +141,8 @@ devhub:
       posting: { capacity: 30, period: 10m }
       like: { capacity: 300, period: 10m }
       messaging: { capacity: 60, period: 1m }
+      community-create: { capacity: 3, period: 1d }
+      community-membership: { capacity: 60, period: 10m }
       reporting: { capacity: 20, period: 24h }
   notifications:
     push-poll-interval: ${NOTIFICATION_PUSH_POLL_INTERVAL:2s}

@@ -67,6 +67,21 @@ public class DevHubMetrics {
                 .increment();
     }
 
+    public void communityCreated() {
+        Counter.builder("devhub.communities.created")
+                .description("Communities founded")
+                .register(registry)
+                .increment();
+    }
+
+    public void communityJoin(Enum<?> policy) {
+        Counter.builder("devhub.community.joins")
+                .description("Joins and join requests by the community's join policy")
+                .tag("policy", tag(policy))
+                .register(registry)
+                .increment();
+    }
+
     private static String tag(Enum<?> value) {
         return value.name().toLowerCase(Locale.ROOT);
     }
