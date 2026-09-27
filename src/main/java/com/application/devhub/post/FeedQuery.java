@@ -17,8 +17,10 @@ public class FeedQuery {
 
     private static final String LIVE_TOP_LEVEL = "p.parent_id IS NULL AND p.deleted_at IS NULL";
     private static final String FOLLOWED = "EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = :viewer AND f.followee_id = p.author_id)";
-    private static final String FOLLOWING_TIER = LIVE_TOP_LEVEL + " AND (p.author_id = :viewer OR " + FOLLOWED + ")";
-    private static final String INTERESTS_TIER = LIVE_TOP_LEVEL + " AND p.author_id <> :viewer AND NOT " + FOLLOWED + " " + """
+    private static final String JOINED = "p.community_id IN (SELECT m.community_id FROM community_members m WHERE m.user_id = :viewer)";
+    private static final String FOLLOWING_TIER = LIVE_TOP_LEVEL + " AND (p.author_id = :viewer OR " + FOLLOWED + " OR " + JOINED + ")";
+    private static final String INTERESTS_TIER = LIVE_TOP_LEVEL + " AND p.author_id <> :viewer AND NOT " + FOLLOWED
+            + " AND (p.community_id IS NULL OR NOT " + JOINED + ") " + """
              AND EXISTS (SELECT 1 FROM user_topics mine
                          JOIN user_topics theirs ON theirs.topic_slug = mine.topic_slug
                          WHERE mine.user_id = :viewer AND theirs.user_id = p.author_id)""";

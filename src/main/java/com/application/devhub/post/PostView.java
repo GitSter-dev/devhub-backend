@@ -20,8 +20,12 @@ public record PostView(
         boolean mine,
         boolean deleted,
         boolean removed,
-        boolean underReview) {
+        boolean underReview,
+        Community community) {
 
     public record Author(UUID id, String username, String displayName) {
+    }
+
+    public record Community(UUID id, String slug, String name) {
     }
 }
