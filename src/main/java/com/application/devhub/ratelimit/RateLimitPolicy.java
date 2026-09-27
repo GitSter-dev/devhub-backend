@@ -15,5 +15,7 @@ public enum RateLimitPolicy {
     POSTING,
     LIKE,
     MESSAGING,
-    REPORTING
+    REPORTING,
+    COMMUNITY_CREATE,
+    COMMUNITY_MEMBERSHIP
 }
