@@ -14,7 +14,10 @@ public final class NotificationViews {
 
     public record NotificationView(UUID id, NotificationType type, List<Actor> actors, int actorCount, UUID subjectId,
                                    UUID targetId, String preview, boolean previewHasCode, Instant updatedAt,
-                                   boolean seen) {
+                                   boolean seen, NotificationCommunity community) {
+    }
+
+    public record NotificationCommunity(UUID id, String slug, String name) {
     }
 
     public record NotificationPage(List<NotificationView> items, String nextCursor) {

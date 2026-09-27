@@ -148,7 +148,7 @@ class ModerationIntegrationTest extends IntegrationTest {
         fixtures.perform(ada, get("/posts/{id}", post))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.post.removed").value(true));
-        JsonNode notifications = fixtures.data(fixtures.perform(ken, get("/notifications"))).get("items");
+        JsonNode notifications = fixtures.data(fixtures.perform(ken, get("/notifications").header("X-App-Platform", "android").header("X-App-Version", "1.1.0"))).get("items");
         assertThat(notifications).hasSize(1);
         assertThat(notifications.get(0).get("type").asString()).isEqualTo("REPORT_RESOLVED");
         assertThat(fixtures.cases(admin, "ACTIONED")).hasSize(1);

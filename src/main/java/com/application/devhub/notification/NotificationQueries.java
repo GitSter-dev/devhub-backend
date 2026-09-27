@@ -3,6 +3,7 @@ package com.application.devhub.notification;
 import com.application.devhub.common.pagination.KeysetCursor;
 import com.application.devhub.notification.NotificationViews.Actor;
 import com.application.devhub.notification.NotificationViews.NotificationPage;
+import com.application.devhub.notification.NotificationViews.NotificationCommunity;
 import com.application.devhub.notification.NotificationViews.NotificationView;
 import com.application.devhub.notification.NotificationViews.UnseenCount;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Component
@@ -35,7 +37,8 @@ public class NotificationQueries {
             SELECT n.id, n.type, n.subject_id, n.updated_at, n.seen_at, latest.subject_id AS target_id,
                    (SELECT count(*) FROM notification_actors c WHERE c.notification_id = n.id) AS actor_count,
                    LEFT(preview.body, %d) AS preview_body,
-                   preview.code IS NOT NULL AS preview_has_code
+                   preview.code IS NOT NULL AS preview_has_code,
+                   nc.id AS community_id, nc.slug AS community_slug, nc.name AS community_name
             FROM notifications n
             JOIN LATERAL (
                 SELECT a.subject_id FROM notification_actors a
@@ -46,6 +49,11 @@ public class NotificationQueries {
             LEFT JOIN posts preview ON preview.deleted_at IS NULL AND preview.id = CASE
                 WHEN n.type = 'POST_LIKED' THEN n.subject_id
                 WHEN n.type IN ('POST_REPLIED', 'FOLLOWED_POSTED') THEN latest.subject_id
+                WHEN n.type = 'COMMUNITY_POST_REMOVED' THEN n.subject_id
+            END
+            LEFT JOIN communities nc ON nc.id = CASE
+                WHEN n.type IN ('COMMUNITY_JOIN_REQUESTED', 'COMMUNITY_JOIN_APPROVED') THEN n.subject_id
+                WHEN n.type = 'COMMUNITY_POST_REMOVED' THEN (SELECT p.community_id FROM posts p WHERE p.id = n.subject_id)
             END
             WHERE %s
             """.formatted(PREVIEW_LENGTH, LIVE_SUBJECT);
@@ -67,13 +75,14 @@ public class NotificationQueries {
     private final NotificationProperties properties;
 
     @Transactional(readOnly = true)
-    public NotificationPage page(UUID viewerId, String cursor) {
+    public NotificationPage page(UUID viewerId, Set<NotificationType> shown, String cursor) {
         KeysetCursor position = KeysetCursor.decode(cursor);
         String keyset = position == null ? ""
                 : " AND (n.updated_at, n.id) < (CAST(:cursorAt AS timestamptz), CAST(:cursorId AS uuid))";
-        var query = jdbcClient.sql(NOTIFICATIONS + " AND n.recipient_id = :viewer" + keyset
+        var query = jdbcClient.sql(NOTIFICATIONS + " AND n.recipient_id = :viewer AND n.type IN (:types)" + keyset
                         + " ORDER BY n.updated_at DESC, n.id DESC LIMIT :limit")
                 .param("viewer", viewerId)
+                .param("types", names(shown))
                 .param("limit", properties.pageSize() + 1);
         if (position != null) {
             query = query.param("cursorAt", position.timestamp()).param("cursorId", position.id());
@@ -95,17 +104,23 @@ public class NotificationQueries {
     }
 
     @Transactional(readOnly = true)
-    public UnseenCount unseenCount(UUID viewerId) {
+    public UnseenCount unseenCount(UUID viewerId, Set<NotificationType> shown) {
         long count = jdbcClient.sql("""
                         SELECT count(*) FROM notifications n
                         WHERE n.recipient_id = :viewer
                           AND n.seen_at IS NULL
+                          AND n.type IN (:types)
                           AND EXISTS (SELECT 1 FROM notification_actors a WHERE a.notification_id = n.id)
                           AND\s""" + LIVE_SUBJECT)
                 .param("viewer", viewerId)
+                .param("types", names(shown))
                 .query(Long.class)
                 .single();
         return new UnseenCount(count);
+    }
+
+    private static List<String> names(Set<NotificationType> types) {
+        return types.stream().map(Enum::name).toList();
     }
 
     private List<NotificationView> assemble(List<Row> rows) {
@@ -127,7 +142,7 @@ public class NotificationQueries {
     }
 
     private record Row(UUID id, NotificationType type, UUID subjectId, UUID targetId, int actorCount, String preview,
-                       boolean previewHasCode, Instant updatedAt, boolean seen) {
+                       boolean previewHasCode, Instant updatedAt, boolean seen, NotificationCommunity community) {
 
         static Row of(ResultSet result) throws SQLException {
             return new Row(
@@ -139,12 +154,19 @@ public class NotificationQueries {
                     result.getString("preview_body"),
                     result.getBoolean("preview_has_code"),
                     result.getTimestamp("updated_at").toInstant(),
-                    result.getTimestamp("seen_at") != null);
+                    result.getTimestamp("seen_at") != null,
+                    communityOf(result));
+        }
+
+        private static NotificationCommunity communityOf(ResultSet result) throws SQLException {
+            UUID id = result.getObject("community_id", UUID.class);
+            return id == null ? null
+                    : new NotificationCommunity(id, result.getString("community_slug"), result.getString("community_name"));
         }
 
         NotificationView view(List<Actor> actors) {
             return new NotificationView(id, type, actors, actorCount, subjectId, targetId, preview, previewHasCode,
-                    updatedAt, seen);
+                    updatedAt, seen, community);
         }
     }
 }
