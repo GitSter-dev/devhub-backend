@@ -26,7 +26,7 @@ public class Notification {
     private UUID recipientId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20, updatable = false)
+    @Column(nullable = false, length = 30, updatable = false)
     private NotificationType type;
 
     @Column(name = "group_key", nullable = false, length = 80, updatable = false)

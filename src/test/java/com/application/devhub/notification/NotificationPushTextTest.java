@@ -44,7 +44,7 @@ class NotificationPushTextTest {
 
     private static NotificationView view(NotificationType type, int count, String preview, boolean code, Actor... actors) {
         return new NotificationView(UUID.randomUUID(), type, List.of(actors), count, UUID.randomUUID(), UUID.randomUUID(),
-                preview, code, Instant.now(), false);
+                preview, code, Instant.now(), false, null);
     }
 
     private static ResourceBundleMessageSource messages() {
