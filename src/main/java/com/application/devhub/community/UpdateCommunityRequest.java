@@ -2,6 +2,8 @@ package com.application.devhub.community;
 
 import com.application.devhub.topic.KnownTopics;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 
 import java.util.HashSet;
@@ -20,7 +22,12 @@ public record UpdateCommunityRequest(
         @Schema(description = "New topics, 1-3; omit to keep", example = "[\"rust\", \"webassembly\"]")
         @Size(min = 1, max = 3)
         @KnownTopics
-        List<String> topics) {
+        List<String> topics,
+        @Schema(description = "Seconds members must wait between posts, 0 to turn slow mode off, at most 3600; "
+                + "omit to keep", example = "60")
+        @Min(0)
+        @Max(3600)
+        Integer slowModeSeconds) {
 
     public UpdateCommunityRequest {
         name = name == null ? null : name.strip();
@@ -33,6 +40,7 @@ public record UpdateCommunityRequest(
                 name != null ? name : community.getName(),
                 description == null ? community.getDescription() : description.isEmpty() ? null : description,
                 joinPolicy != null ? joinPolicy : community.getJoinPolicy(),
-                topics != null ? new HashSet<>(topics) : community.getTopics());
+                topics != null ? new HashSet<>(topics) : community.getTopics(),
+                slowModeSeconds != null ? slowModeSeconds : community.getSlowModeSeconds());
     }
 }

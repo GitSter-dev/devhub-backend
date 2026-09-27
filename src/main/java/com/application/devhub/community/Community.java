@@ -46,6 +46,9 @@ public class Community extends BaseEntity {
     @Column(name = "created_by", nullable = false, updatable = false)
     private UUID createdBy;
 
+    @Column(name = "owner_id", nullable = false)
+    private UUID ownerId;
+
     @Column(name = "removed_at")
     private Instant removedAt;
 
@@ -56,6 +59,7 @@ public class Community extends BaseEntity {
 
     private Community(UUID founderId, String slug, CommunityDetails details) {
         this.createdBy = founderId;
+        this.ownerId = founderId;
         this.slug = slug;
         apply(details);
     }
@@ -72,10 +76,23 @@ public class Community extends BaseEntity {
         return removedAt != null;
     }
 
+    public void handOverTo(UUID newOwnerId) {
+        this.ownerId = newOwnerId;
+    }
+
+    public void takeDown() {
+        this.removedAt = Instant.now();
+    }
+
+    public void restore() {
+        this.removedAt = null;
+    }
+
     private void apply(CommunityDetails details) {
         this.name = details.name();
         this.description = details.description();
         this.joinPolicy = details.joinPolicy();
+        this.slowModeSeconds = details.slowModeSeconds();
         this.topics.clear();
         this.topics.addAll(details.topics());
     }

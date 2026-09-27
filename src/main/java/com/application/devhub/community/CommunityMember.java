@@ -55,6 +55,32 @@ public class CommunityMember {
         return role == CommunityRole.OWNER;
     }
 
+    public void promote() {
+        if (role == CommunityRole.MEMBER) {
+            this.role = CommunityRole.MODERATOR;
+        }
+    }
+
+    public void demote() {
+        if (role == CommunityRole.MODERATOR) {
+            this.role = CommunityRole.MEMBER;
+        }
+    }
+
+    public void stepDown() {
+        if (role == CommunityRole.OWNER) {
+            this.role = CommunityRole.MODERATOR;
+        }
+    }
+
+    public void becomeOwner() {
+        this.role = CommunityRole.OWNER;
+    }
+
+    public UUID userId() {
+        return key.userId();
+    }
+
     public void posted() {
         this.lastPostedAt = Instant.now();
     }

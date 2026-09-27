@@ -27,7 +27,8 @@ public class ReportService {
         ModerationCase moderationCase = caseRepository
                 .findByTargetTypeAndTargetId(request.targetType(), request.targetId())
                 .orElseGet(() -> caseRepository.saveAndFlush(
-                        ModerationCase.open(request.targetType(), request.targetId(), captured.ownerId())));
+                        ModerationCase.open(request.targetType(), request.targetId(), captured.ownerId(),
+                                captured.communityId())));
         reportRepository.saveAndFlush(Report.of(moderationCase.getId(), reporterId, request.targetType(),
                 request.targetId(), captured.ownerId(), request.reason(), request.note(), captured.json()));
         moderationCase.recordReport(request.reason().weight());

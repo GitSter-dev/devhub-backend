@@ -44,6 +44,6 @@ public record CreateCommunityRequest(
     }
 
     CommunityDetails details() {
-        return new CommunityDetails(name, description, joinPolicy, Set.copyOf(topics));
+        return new CommunityDetails(name, description, joinPolicy, Set.copyOf(topics), 0);
     }
 }

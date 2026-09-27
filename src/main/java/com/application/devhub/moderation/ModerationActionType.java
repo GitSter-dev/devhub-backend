@@ -7,5 +7,7 @@ public enum ModerationActionType {
     SUSPEND,
     BAN,
     RESTORE,
-    REINSTATE
+    REINSTATE,
+    COMMUNITY_BAN,
+    COMMUNITY_UNBAN
 }

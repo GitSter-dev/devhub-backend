@@ -45,6 +45,12 @@ public class ModerationAction {
     @Column(name = "acts_until", updatable = false)
     private Instant actsUntil;
 
+    @Column(name = "community_id", updatable = false)
+    private UUID communityId;
+
+    @Column(name = "target_post_id", updatable = false)
+    private UUID targetPostId;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -62,5 +68,14 @@ public class ModerationAction {
     public static ModerationAction of(UUID caseId, UUID moderatorId, ModerationActionType action, UUID targetUserId,
                                       String note, Instant actsUntil) {
         return new ModerationAction(caseId, moderatorId, action, targetUserId, note, actsUntil);
+    }
+
+    public static ModerationAction inCommunity(UUID communityId, UUID caseId, UUID moderatorId,
+                                               ModerationActionType action, UUID targetUserId, UUID targetPostId,
+                                               String note, Instant actsUntil) {
+        ModerationAction entry = new ModerationAction(caseId, moderatorId, action, targetUserId, note, actsUntil);
+        entry.communityId = communityId;
+        entry.targetPostId = targetPostId;
+        return entry;
     }
 }

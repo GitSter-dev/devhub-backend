@@ -11,7 +11,10 @@ public final class ModerationViews {
 
     public record CaseView(UUID id, ReportTarget targetType, UUID targetId, UUID ownerId, String ownerUsername,
                            CaseStatus status, int reporterCount, int severity, boolean autoHidden,
-                           Instant firstReportedAt, Instant lastReportedAt) {
+                           Instant firstReportedAt, Instant lastReportedAt, CaseCommunity community) {
+    }
+
+    public record CaseCommunity(UUID id, String slug, String name) {
     }
 
     public record CasePage(List<CaseView> items, String nextCursor) {
@@ -27,7 +30,7 @@ public final class ModerationViews {
 
     public record AuditEntry(UUID id, UUID caseId, String moderatorUsername, ModerationActionType action,
                              UUID targetUserId, String targetUsername, String note, Instant actsUntil,
-                             Instant createdAt) {
+                             Instant createdAt, CaseCommunity community) {
     }
 
     public record AuditPage(List<AuditEntry> items, String nextCursor) {

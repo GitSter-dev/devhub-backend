@@ -3,6 +3,8 @@ package com.application.devhub.post;
 import com.application.devhub.common.persistence.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -47,6 +49,13 @@ public class Post extends BaseEntity {
     @Column(name = "community_id", updatable = false)
     private UUID communityId;
 
+    @Column(name = "pinned_at")
+    private Instant pinnedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "removal_scope", length = 20)
+    private RemovalScope removalScope;
+
     private Post(UUID authorId, PostContent content, UUID parentId, UUID rootId, UUID communityId) {
         this.authorId = authorId;
         this.body = content.body();
@@ -79,8 +88,46 @@ public class Post extends BaseEntity {
     }
 
     public void remove() {
+        removeWithin(RemovalScope.PLATFORM);
+    }
+
+    public void removeFromCommunity() {
+        if (removalScope != RemovalScope.PLATFORM) {
+            removeWithin(RemovalScope.COMMUNITY);
+        }
+    }
+
+    public boolean restoreToCommunity() {
+        if (removalScope == RemovalScope.PLATFORM) {
+            return false;
+        }
+        restore();
+        return true;
+    }
+
+    public boolean isRemoved() {
+        return removedAt != null;
+    }
+
+    public boolean isLiveTopLevel() {
+        return !isReply() && !isDeleted() && !isRemoved();
+    }
+
+    public void pin() {
+        if (pinnedAt == null) {
+            this.pinnedAt = Instant.now();
+        }
+    }
+
+    public void unpin() {
+        this.pinnedAt = null;
+    }
+
+    private void removeWithin(RemovalScope scope) {
         this.removedAt = Instant.now();
+        this.removalScope = scope;
         this.hiddenAt = null;
+        this.pinnedAt = null;
     }
 
     public void hide() {
@@ -91,6 +138,7 @@ public class Post extends BaseEntity {
 
     public void restore() {
         this.removedAt = null;
+        this.removalScope = null;
         this.hiddenAt = null;
     }
 

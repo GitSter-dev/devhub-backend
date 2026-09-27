@@ -9,6 +9,8 @@ import com.application.devhub.post.PostView;
 import com.application.devhub.post.PostViews;
 import com.application.devhub.user.User;
 import com.application.devhub.user.UserRepository;
+import com.application.devhub.community.Community;
+import com.application.devhub.community.CommunityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -30,12 +32,14 @@ public class ReportSnapshots {
     private final Reachability reachability;
     private final ModerationProperties properties;
     private final JsonMapper jsonMapper;
+    private final CommunityRepository communityRepository;
 
     public Captured capture(UUID reporterId, ReportTarget targetType, UUID targetId) {
         return switch (targetType) {
             case POST -> post(reporterId, targetId);
             case MESSAGE -> message(reporterId, targetId);
             case USER -> user(reporterId, targetId);
+            case COMMUNITY -> community(reporterId, targetId);
         };
     }
 
@@ -46,11 +50,26 @@ public class ReportSnapshots {
         }
         return new Captured(post.author().id(), json(Map.of(
                 "postId", post.id().toString(),
+                "community", post.community() == null ? "" : post.community().slug(),
                 "author", post.author().username(),
                 "body", nullable(post.body()),
                 "code", nullable(post.code()),
                 "codeLanguage", nullable(post.codeLanguage()),
-                "createdAt", post.createdAt().toString())));
+                "createdAt", post.createdAt().toString())), post.community() == null ? null : post.community().id());
+    }
+
+    private Captured community(UUID reporterId, UUID communityId) {
+        Community community = communityRepository.findById(communityId)
+                .filter(candidate -> !candidate.isRemoved())
+                .orElseThrow(ApiException::notFound);
+        if (community.getOwnerId().equals(reporterId)) {
+            throw ApiException.badRequest();
+        }
+        return new Captured(community.getOwnerId(), json(Map.of(
+                "communityId", community.getId().toString(),
+                "slug", community.getSlug(),
+                "name", community.getName(),
+                "description", nullable(community.getDescription()))));
     }
 
     private Captured message(UUID reporterId, UUID messageId) {
@@ -106,6 +125,10 @@ public class ReportSnapshots {
         return jsonMapper.writeValueAsString(fields);
     }
 
-    public record Captured(UUID ownerId, String json) {
+    public record Captured(UUID ownerId, String json, UUID communityId) {
+
+        Captured(UUID ownerId, String json) {
+            this(ownerId, json, null);
+        }
     }
 }

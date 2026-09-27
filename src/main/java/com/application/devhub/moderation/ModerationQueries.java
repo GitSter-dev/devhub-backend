@@ -4,6 +4,7 @@ import com.application.devhub.common.api.ApiException;
 import com.application.devhub.moderation.ModerationViews.ActionView;
 import com.application.devhub.moderation.ModerationViews.CaseDetail;
 import com.application.devhub.moderation.ModerationViews.CasePage;
+import com.application.devhub.moderation.ModerationViews.CaseCommunity;
 import com.application.devhub.moderation.ModerationViews.CaseView;
 import com.application.devhub.moderation.ModerationViews.ReportView;
 import lombok.RequiredArgsConstructor;
@@ -23,25 +24,31 @@ public class ModerationQueries {
     private static final String CASES = """
             SELECT c.id, c.target_type, c.target_id, c.owner_id, o.username AS owner_username, c.status,
                    c.reporter_count, c.severity, c.auto_hidden_at IS NOT NULL AS auto_hidden,
-                   c.first_reported_at, c.last_reported_at
+                   c.first_reported_at, c.last_reported_at,
+                   cm.id AS community_id, cm.slug AS community_slug, cm.name AS community_name
             FROM moderation_cases c
             JOIN users o ON o.id = c.owner_id
+            LEFT JOIN communities cm ON cm.id = c.community_id
             """;
 
     private final JdbcClient jdbcClient;
     private final ModerationProperties properties;
 
     @Transactional(readOnly = true)
-    public CasePage cases(CaseStatus status, String cursor) {
+    public CasePage cases(CaseStatus status, UUID communityId, String cursor) {
         CaseCursor position = CaseCursor.decode(cursor);
         String keyset = position == null ? ""
                 : " AND (c.severity, c.reporter_count, c.last_reported_at, c.id)"
                 + " < (:cursorSeverity, :cursorReporters, CAST(:cursorAt AS timestamptz), CAST(:cursorId AS uuid))";
-        var query = jdbcClient.sql(CASES + " WHERE c.status = :status" + keyset
+        String community = communityId == null ? "" : " AND c.community_id = :communityId";
+        var query = jdbcClient.sql(CASES + " WHERE c.status = :status" + community + keyset
                         + " ORDER BY c.severity DESC, c.reporter_count DESC, c.last_reported_at DESC, c.id DESC"
                         + " LIMIT :limit")
                 .param("status", status.name())
                 .param("limit", properties.casePageSize() + 1);
+        if (communityId != null) {
+            query = query.param("communityId", communityId);
+        }
         if (position != null) {
             query = query.param("cursorSeverity", position.severity())
                     .param("cursorReporters", position.reporterCount())
@@ -111,6 +118,12 @@ public class ModerationQueries {
                 row.getInt("severity"),
                 row.getBoolean("auto_hidden"),
                 row.getTimestamp("first_reported_at").toInstant(),
-                row.getTimestamp("last_reported_at").toInstant());
+                row.getTimestamp("last_reported_at").toInstant(),
+                communityOf(row));
+    }
+
+    private static CaseCommunity communityOf(ResultSet row) throws SQLException {
+        UUID id = row.getObject("community_id", UUID.class);
+        return id == null ? null : new CaseCommunity(id, row.getString("community_slug"), row.getString("community_name"));
     }
 }

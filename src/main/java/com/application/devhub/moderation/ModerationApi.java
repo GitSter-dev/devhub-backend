@@ -27,6 +27,7 @@ public interface ModerationApi {
     @ApiErrors({FORBIDDEN, BAD_REQUEST})
     ApiEnvelope<CasePage> cases(@Parameter(hidden = true) JwtAuthenticationToken authentication,
                                 @Parameter(description = "Which cases to list") CaseStatus status,
+                                @Parameter(description = "Only cases about content in this community") UUID communityId,
                                 @Parameter(description = "nextCursor from the previous page") String cursor);
 
     @Operation(summary = "Get a moderation case",
