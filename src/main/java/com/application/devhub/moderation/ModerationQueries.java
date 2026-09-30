@@ -28,19 +28,33 @@ public class ModerationQueries {
                    cm.id AS community_id, cm.slug AS community_slug, cm.name AS community_name
             FROM moderation_cases c
             JOIN users o ON o.id = c.owner_id
-            LEFT JOIN communities cm ON cm.id = c.community_id
+            LEFT JOIN communities cm ON cm.id = COALESCE(c.community_id,
+                    CASE WHEN c.target_type = 'COMMUNITY' THEN c.target_id END)
             """;
 
     private final JdbcClient jdbcClient;
     private final ModerationProperties properties;
 
+    private static final String CONTENT_IN_COMMUNITY = " AND c.community_id = :communityId";
+    private static final String CONTENT_IN_OR_ABOUT_COMMUNITY =
+            " AND (c.community_id = :communityId OR (c.target_type = 'COMMUNITY' AND c.target_id = :communityId))";
+
     @Transactional(readOnly = true)
     public CasePage cases(CaseStatus status, UUID communityId, String cursor) {
+        return page(status, communityId, CONTENT_IN_OR_ABOUT_COMMUNITY, cursor);
+    }
+
+    @Transactional(readOnly = true)
+    public CasePage casesIn(CaseStatus status, UUID communityId, String cursor) {
+        return page(status, communityId, CONTENT_IN_COMMUNITY, cursor);
+    }
+
+    private CasePage page(CaseStatus status, UUID communityId, String communityFilter, String cursor) {
         CaseCursor position = CaseCursor.decode(cursor);
         String keyset = position == null ? ""
                 : " AND (c.severity, c.reporter_count, c.last_reported_at, c.id)"
                 + " < (:cursorSeverity, :cursorReporters, CAST(:cursorAt AS timestamptz), CAST(:cursorId AS uuid))";
-        String community = communityId == null ? "" : " AND c.community_id = :communityId";
+        String community = communityId == null ? "" : communityFilter;
         var query = jdbcClient.sql(CASES + " WHERE c.status = :status" + community + keyset
                         + " ORDER BY c.severity DESC, c.reporter_count DESC, c.last_reported_at DESC, c.id DESC"
                         + " LIMIT :limit")

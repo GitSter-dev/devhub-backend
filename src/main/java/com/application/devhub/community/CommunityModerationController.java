@@ -142,7 +142,7 @@ public class CommunityModerationController implements CommunityModerationApi {
     public ApiEnvelope<CasePage> cases(JwtAuthenticationToken authentication, @PathVariable String slug,
                                        @RequestParam(defaultValue = "OPEN") CaseStatus status,
                                        @RequestParam(required = false) String cursor) {
-        return ApiEnvelope.ok(moderationQueries.cases(status, moderated(authentication, slug).getId(), cursor));
+        return ApiEnvelope.ok(moderationQueries.casesIn(status, moderated(authentication, slug).getId(), cursor));
     }
 
     @Override

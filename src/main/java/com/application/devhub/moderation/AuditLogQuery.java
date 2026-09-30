@@ -28,7 +28,9 @@ public class AuditLogQuery {
             FROM moderation_actions a
             JOIN users m ON m.id = a.moderator_id
             LEFT JOIN users t ON t.id = a.target_user_id
-            LEFT JOIN communities cm ON cm.id = a.community_id
+            LEFT JOIN moderation_cases mc ON mc.id = a.case_id
+            LEFT JOIN communities cm ON cm.id = COALESCE(a.community_id,
+                    CASE WHEN mc.target_type = 'COMMUNITY' THEN mc.target_id END)
             WHERE TRUE
             """;
 
