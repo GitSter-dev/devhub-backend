@@ -233,9 +233,17 @@ class CommunityModerationIntegrationTest extends IntegrationTest {
         String caseId = jdbcTemplate.queryForObject(
                 "SELECT id::text FROM moderation_cases WHERE target_type = 'COMMUNITY'", String.class);
 
+        perform(get("/admin/moderation/cases").param("communityId", rust.toString()), root)
+                .andExpect(jsonPath("$.data.items[*].id", contains(caseId)))
+                .andExpect(jsonPath("$.data.items[0].community.slug").value("rust-lang"));
+        perform(get("/communities/rust-lang/moderation/cases"), ada)
+                .andExpect(jsonPath("$.data.items").isEmpty());
+
         perform(post("/admin/moderation/cases/{id}/actions", caseId).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"action\": \"REMOVE_CONTENT\"}"), root).andExpect(status().isOk());
 
+        perform(get("/admin/moderation/actions"), root)
+                .andExpect(jsonPath("$.data.items[0].community.slug").value("rust-lang"));
         perform(get("/communities/rust-lang"), grace).andExpect(status().isNotFound());
         perform(get("/feed"), grace).andExpect(jsonPath("$.data.items").isEmpty());
     }
